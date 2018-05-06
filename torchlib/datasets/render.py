@@ -28,7 +28,6 @@ class DetectionGT:
     }
 
 
-
     def __init__(self):
             self.stype = ''
             self.truncated = 0
@@ -46,7 +45,6 @@ class DetectionGT:
             self.box = [];
             self.chart = [];
 
-    
     def assignment(self, cc):
 
             self.stype = cc.stype;
@@ -65,7 +63,6 @@ class DetectionGT:
 
             self.box = cc.box;
             self.chart = cc.chart;
-
 
     def gt_to_kitti_format(self):
         '''
@@ -135,10 +132,8 @@ class DetectionGT:
         assert(len(result) is self.lmdb_format_length())
         return result
 
-
-
-class ccModel(object):
-    "Model for mcc generator result"
+class ColorCheckerModel(object):
+    "Color Checker Model for mcc generator result"
 
     stype = '' 
     chart = np.zeros((24,8));
@@ -148,12 +143,12 @@ class ccModel(object):
     occlusion = 0;
     fi = np.zeros((1,3))
     t  = np.zeros((1,3))
-
     
-class Render(object):
+class ColorCheckerRender(object):
     
    
-    #def __init__(self):
+    def __init__(self):
+        pass
 
     # function cc = chartcolorboard( K, R, T )
     # Example:
@@ -182,11 +177,8 @@ class Render(object):
         chart = utl.projection(chart, K, R, T).reshape((-1,8));
         bbox = utl.boundingbox(box);
         stype = model.stype;
-
         return stype, chart, box, bbox, chartcolor, boxsize;
-
-
-    
+ 
     @staticmethod
     def getsyntheticcharcolorimage(im, K, fi, t, itype):
         "Get synthetic color chart image"
@@ -229,7 +221,7 @@ class Render(object):
         #im[:,:,1] = cv2.equalizeHist(im[:,:,1]);
         #im[:,:,2] = cv2.equalizeHist(im[:,:,2]);
 
-        cc = ccModel();
+        cc = ColorCheckerModel();
         cc.stype = stype;
         cc.chart = chart;
         cc.box = box;
@@ -295,7 +287,6 @@ class Render(object):
         
         return im, ccs
 
-
     @staticmethod
     def generatennt(data, num = 5):
         '''
@@ -325,7 +316,6 @@ class Render(object):
         data = data.transpose(0, 3, 2, 1);
         return data, labels;
 
-
     @staticmethod
     def generate(im, num = 5):
         '''
@@ -354,3 +344,4 @@ class Render(object):
             
         return im, mask;
 
+ 

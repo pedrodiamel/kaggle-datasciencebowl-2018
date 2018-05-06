@@ -17,7 +17,6 @@ def iou(gt, pred):
         union = 1e-09
     return intersection / union
 
-
 def compute_ious(gt, predictions):
     gt_ = decompose(gt)
     predictions_ = decompose(predictions)

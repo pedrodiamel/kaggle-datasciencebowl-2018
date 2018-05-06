@@ -4,34 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-def to_one_hot(mask, size):
-    
-    n, c, h, w = size
-    ymask = torch.FloatTensor(size).zero_()
-    new_mask = torch.LongTensor(n,1,h,w)
-    if mask.is_cuda:
-        ymask = ymask.cuda(mask.get_device())
-        new_mask = new_mask.cuda(target.get_device())
-    new_mask[:,0,:,:] = torch.clamp(mask.data, 0, c-1)
-    ymask.scatter_(1, new_mask , 1.0)    
-    return Variable(ymask)
 
-def centercrop(image, w, h):        
-    nt, ct, ht, wt = image.size()
-    padw, padh = (wt-w) // 2 ,(ht-h) // 2
-    if padw>0 and padh>0: image = image[:,:, padh:-padh, padw:-padw]
-    return image
-
-def flatten(x):        
-    x_flat = x.clone()
-    x_flat = x_flat.view(x.shape[0], -1)
-    return x_flat
     
 class WeightedMCEloss(nn.Module):
 
     def __init__(self ):
         super(WeightedMCEloss, self).__init__()
-
 
     def forward(self, y_pred, y_true, weight ):
         
@@ -200,7 +178,6 @@ class MCEDiceLoss(nn.Module):
         return loss
 
 
-
 class Accuracy(nn.Module):
     
     def __init__(self):
@@ -242,7 +219,7 @@ class Dice(nn.Module):
     def forward(self, y_pred, y_true ):
         
         n, ch, h, w = y_pred.size()
-        y_true   = centercrop(y_true, w, h)
+        y_true = centercrop(y_true, w, h)
 
         prob = F.softmax(y_pred, dim=1)
         prob = prob.data
@@ -250,19 +227,32 @@ class Dice(nn.Module):
 
         y_true_f = flatten(y_true[:,1,...]).float()
         y_pred_f = flatten(maxprob).float()
-        
-        # psilon = 1e-15
-        # intersection = (y_pred * y_true).sum(dim=-2).sum(dim=-1)
-        # union = y_true.sum(dim=-2).sum(dim=-1) + y_pred.sum(dim=-2).sum(dim=-1) + epsilon
-        # return 2 * (intersection / union).mean()
-        
-        #y_pred = self.sigmoid(y_pred)        
-        # y_true_f = flatten(y_true)
-        # y_pred   = y_pred.float()
-        # y_pred_f = torch.gt(flatten(y_pred), 0.5).float()
-        
+                
         intersection = y_true_f * y_pred_f
         score = 2. * torch.sum(intersection) / (torch.sum(y_true_f) + torch.sum(y_pred_f))
 
         return 100*score
 
+
+
+def to_one_hot(mask, size):    
+    n, c, h, w = size
+    ymask = torch.FloatTensor(size).zero_()
+    new_mask = torch.LongTensor(n,1,h,w)
+    if mask.is_cuda:
+        ymask = ymask.cuda(mask.get_device())
+        new_mask = new_mask.cuda(target.get_device())
+    new_mask[:,0,:,:] = torch.clamp(mask.data, 0, c-1)
+    ymask.scatter_(1, new_mask , 1.0)    
+    return Variable(ymask)
+
+def centercrop(image, w, h):        
+    nt, ct, ht, wt = image.size()
+    padw, padh = (wt-w) // 2 ,(ht-h) // 2
+    if padw>0 and padh>0: image = image[:,:, padh:-padh, padw:-padw]
+    return image
+
+def flatten(x):        
+    x_flat = x.clone()
+    x_flat = x_flat.view(x.shape[0], -1)
+    return x_flat

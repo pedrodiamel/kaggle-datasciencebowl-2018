@@ -19,7 +19,9 @@ from deep.datasets import imageutl as imutl
 
 
 train = 'train'
+validation = 'val'
 test  = 'test'
+
 
 class DSXBDataset(Dataset):
     '''

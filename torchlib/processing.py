@@ -117,16 +117,13 @@ def sliding_windows( data, sizewnd=(572,572) ):
             yield( iniy, inix, data[iniy:iniy+sizewnd[0], inix:inix+sizewnd[1],:] )
 
 
-def center_crop(image, newsize ):
-            
+def center_crop(image, newsize ):            
     height, width = newsize
     h, w, c = image.shape
     dy = (h - height) // 2
     dx = (w - width)  // 2
-
     y1 = dy; y2 = y1 + height
     x1 = dx; x2 = x1 + width
-
     image_t  =  image[y1:y2, x1:x2, :]
     return image_t
 

@@ -12,25 +12,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-
-class AverageMeter(object):
-    """Computes and stores the average and current value"""
-    def __init__(self):
-        self.reset()        
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-        
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-
 def to_np(x):
     return x.data.cpu().numpy()
 
@@ -44,14 +25,6 @@ def fit(net, ngpu, inputs):
     if ngpu > 1: outputs = nn.parallel.data_parallel(net, inputs, range(ngpu))
     else: outputs = net(inputs)
     return outputs
-
-def adjust_learning_rate(optimizer, epoch, lr):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = lr * (0.1 ** (epoch // 30))    
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-    return lr
-
 
 def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
     """Saves checkpoint to disk"""
@@ -78,3 +51,4 @@ def resumecheckpoint(resume, net, optimizer):
             print("=> no checkpoint found at '{}'".format(resume))
 
     return start_epoch, prec
+

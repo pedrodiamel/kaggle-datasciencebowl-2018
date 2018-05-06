@@ -1,5 +1,6 @@
 from visdom import Visdom
 import numpy as np
+import cv2
 
 class VisdomLinePlotter(object):
     """Plots to Visdom"""
@@ -60,12 +61,16 @@ class VisdomScatter(object):
 class HeatMapVisdom(object):
     """Heat Map to Visdom"""
     
-    def __init__(self, env_name='main'):
+    def __init__(self, env_name='main', heatsize=(100,100) ):
         self.vis = Visdom()
         self.env = env_name
         self.hmaps = {}
+        self.heatsize = heatsize
     
     def show(self, title, image):
+        
+        image = cv2.resize(image, self.heatsize, interpolation = cv2.INTER_LINEAR)
+
         if title not in self.hmaps:
             self.hmaps[title] = self.vis.heatmap(
                 image, 
@@ -83,12 +88,16 @@ class HeatMapVisdom(object):
 class ImageVisdom(object):
     """Images to Visdom"""
     
-    def __init__(self, env_name='main'):
+    def __init__(self, env_name='main', imsize=(100,100)):
         self.vis = Visdom()
         self.env = env_name
         self.images = {}
+        self.imsize = imsize
     
     def show(self, title, image):
+        
+        image = cv2.resize(image, self.heatsize, interpolation = cv2.INTER_LINEAR)
+
         if title not in self.images:
             self.images[title] = self.vis.image(
                 image, 

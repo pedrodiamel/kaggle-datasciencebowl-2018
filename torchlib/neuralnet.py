@@ -94,6 +94,7 @@ class Network(object):
         self.optimizer = None
         self.lrscheduler = None
         self.vallosses = None
+
         self.accuracy = nloss.Accuracy()
         self.dice = nloss.Dice()
   
@@ -312,21 +313,16 @@ class Network(object):
             prob = prob.data[0]
             _,maxprob = torch.max(prob,0)
             
-            target_send = cv2.resize(targets_var.data.cpu()[0].numpy()[1,:,:], (ws,hw) , interpolation = cv2.INTER_LINEAR)
-            weights_send = cv2.resize(weights_var.data.cpu()[0].numpy()[0,:,:], (ws,hw) , interpolation = cv2.INTER_LINEAR)
-            image_send = cv2.resize(inputs_var.data.cpu()[0].numpy()[0,:,:], (ws,hw) , interpolation = cv2.INTER_LINEAR)
-            maxprob_send = cv2.resize(maxprob.cpu().numpy().astype(np.float32), (ws,hw) , interpolation = cv2.INTER_LINEAR )
-
-            self.visheatmap.show('Label', target_send )
-            self.visheatmap.show('Weight map', weights_send)
-            self.visheatmap.show('Image', image_send)
-            self.visheatmap.show('Max prob',maxprob_send )
+            self.visheatmap.show('Label', targets_var.data.cpu()[0].numpy()[1,:,:] )
+            self.visheatmap.show('Weight map', weights_var.data.cpu()[0].numpy()[0,:,:])
+            self.visheatmap.show('Image', inputs_var.data.cpu()[0].numpy()[0,:,:])
+            self.visheatmap.show('Max prob',maxprob.cpu().numpy().astype(np.float32) )
             for k in range(prob.shapeweight[0]):                
-                prob_send = cv2.resize(prob.cpu()[k].numpy(), (ws,hw) , interpolation = cv2.INTER_LINEAR)
-                self.visheatmap.show('Heat map {}'.format(k),prob_send)
+                self.visheatmap.show('Heat map {}'.format(k), prob.cpu()[k].numpy() )
            
 
         return accs_t.avg
+
 
     def test(self, data_loader):
         pass

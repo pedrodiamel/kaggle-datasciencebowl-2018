@@ -7,6 +7,7 @@ from scipy.stats import itemfreq
 from skimage.color import label2rgb
 import numpy as np
 import cv2
+import skfmm
 
 def sigmoid(x):
     return 1. / (1 + np.exp(-x))
@@ -125,7 +126,6 @@ def mpostprocessmax(score):
     
     predition = np.argmax(score[:,:,:3], axis=2).astype('uint8') 
     predition = predition == 1
-
     labels, _ = ndi.label(predition)
     labels = decompose(labels)
     labels = clean_label( labels )
@@ -136,34 +136,26 @@ def mpostprocessmax(score):
 
 
 def clean_label( masks ):
-    
         
     cln_mask = []
     mean_area, radio = mean_blob_size( masks.max(axis=0)  )
-
-    #print(mean_area)
-
     for mask in masks:        
         mask = (mask>128).astype(np.uint8)                
         try:
             _,contours,_ = cv2.findContours(mask, 1, 2) 
             if len(contours) == 0: continue
 
-            contour = contours[0]
-            
+            contour = contours[0]            
             if len(contour) < 5:
                 continue
             
             area = cv2.contourArea(contour)
-            #print(area, mean_area/area , mean_area/area > 0.1, radio)
-
             if area <= 10 or (mean_area !=1 and mean_area/area < 0.2):  # skip ellipses smaller then 5x5
                 continue
             
             epsilon = 0.1*cv2.arcLength(contour,True)
             contour_aprox = cv2.approxPolyDP(contour,epsilon,True)   
-            cv2.fillPoly(mask, contour_aprox, 1)  
-            
+            cv2.fillPoly(mask, contour_aprox, 1)             
             cln_mask.append(mask)
                         
         except ValueError as e:
@@ -235,11 +227,8 @@ def create_ellipses_mask(masksize, ellipses ):
             #mask = crop_mask(mask, 5)
             masks[k,:,:] = mask    
         except ValueError as e:
-            pass   
-    
+            pass       
     return masks
-
-
 
 
 def drop_artifacts_per_label(labels, initial_mask):
@@ -385,7 +374,6 @@ def drop_small(img, min_size):
     img = morph.remove_small_objects(img, min_size=min_size)
     return relabel(img)
 
-
 def tolabel(mask):
     labeled, nr_true = ndi.label(mask)
     return labeled
@@ -412,4 +400,58 @@ def decompose(labeled):
         masks.append(msk)
     if not masks: return np.array([labeled])
     else: return np.array(masks)
+
+
+def mpostprocess_soft( softpred, line_width = 4 ):
+    '''
+    Precess data
+    '''
+    # assume the only output is a CHW image where C is the number
+    # of classes, H and W are the height and width of the image
+
+    # retain only the top class for each pixel
+    class_data = np.argmax(softpred, axis=2).astype('uint8')
+
+    # remember the classes we found
+    found_classes = np.unique(class_data)
+
+    fill_data = np.ndarray((class_data.shape[0], class_data.shape[1], 4), dtype='uint8')
+    for x in range(3):
+        fill_data[:, :, x] = class_data.copy()
+
+    # Assuming that class 0 is the background
+    mask = np.greater(class_data, 0)
+    fill_data[:, :, 3] = mask * 255
+    line_data = fill_data.copy()
+    seg_data = fill_data.copy()
+    
+    # Black mask of non-segmented pixels
+    mask_data = np.zeros(fill_data.shape, dtype='uint8')
+    mask_data[:, :, 3] = (1 - mask) * 255
+
+    # Generate outlines around segmented classes
+    if len(found_classes) > 1:
+                
+        # Assuming that class 0 is the background.
+        line_mask = np.zeros(class_data.shape, dtype=bool)
+        max_distance = np.zeros(class_data.shape, dtype=float) + 1
+        for c in (x for x in found_classes if x != 0):
+            c_mask = np.equal(class_data, c)
+            # Find the signed distance from the zero contour
+            distance = skfmm.distance(c_mask.astype('float32') - 0.5)
+            # Accumulate the mask for all classes
+            line_mask |= c_mask & np.less(distance, line_width)
+            max_distance = np.maximum(max_distance, distance + 128)
+
+            line_data[:, :, 3] = line_mask * 255
+            max_distance = np.maximum(max_distance, np.zeros(max_distance.shape, dtype=float))
+            max_distance = np.minimum(max_distance, np.zeros(max_distance.shape, dtype=float) + 255)
+            seg_data[:, :, 3] = max_distance
+
+    return {
+        'prediction':class_data,
+        'line_data': line_data,
+        'fill_data': fill_data,
+        'seg_data' : seg_data,
+    }
 

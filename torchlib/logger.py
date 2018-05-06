@@ -2,11 +2,32 @@
 import torch as th
 import torch.nn as nn
 from torch.autograd import Variable
-
 from collections import OrderedDict
 
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()        
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+        
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+    
+
+def image_summary(data):
+    print(np.min(data), np.max(data), data.shape)
+
 def summary(model, input_size):
+    
         def register_hook(module):
             def hook(module, input, output):
                 class_name = str(module.__class__).split('.')[-1].split("'")[0]
