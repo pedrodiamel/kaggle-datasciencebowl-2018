@@ -405,6 +405,7 @@ class GeometricDistort(object):
             image_t = cv2.warpAffine(image_t, rotation_mat, (width, height), flags=cv2.INTER_LINEAR )
             image_t = cv2.warpAffine(image_t, translation_mat, (width, height), flags=cv2.INTER_LINEAR )
             #image_t = cv2.warpAffine(image_t, warp_mat, (width, height) )
+            
             if bfliplr: image_t = cv2.flip(image_t,0)
             if bflipud: image_t = cv2.flip(image_t,1)
         
@@ -497,18 +498,6 @@ class ElasticTorchDistort(object):
 
 
 
-class CLAHE(object):
-    
-    def __init__(self, clipLimit=2.0, tileGridSize=(8, 8)):
-        self.clipLimit = clipLimit
-        self.tileGridSize = tileGridSize
-
-    def __call__(self, im):
-        img_yuv = cv2.cvtColor(im, cv2.COLOR_RGB2YUV)
-        clahe = cv2.createCLAHE(clipLimit=self.clipLimit, tileGridSize=self.tileGridSize)
-        img_yuv[:, :, 0] = clahe.apply(img_yuv[:, :, 0])
-        img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
-        return img_output
 
 ## color ====================================================================================
 
