@@ -109,7 +109,7 @@ def torch_elastic_transform(shape, size_grid, deform):
     tps = TPSGridGen(target_height, target_width, target_control_points)
     source_coordinate = tps(Variable(torch.unsqueeze(source_control_points, 0)))
     grid = source_coordinate.view(1, target_height, target_width, 2)
-
+    
     return grid
 
 # GEOMETRICAL TRANSFORM
@@ -144,14 +144,14 @@ def geometric_transform( imsize, degree, translation, warp ):
     # # NOTE: The commented code below is left for reference
     # # The warp function tends to blur the image, so it is not useds
     
-    # src_triangle = np.float32([[0, 0], [0, height], [width, 0]])
-    # x_offsets = [warp * width * random.uniform(-1, 1) for _ in range(3)]
-    # y_offsets = [warp * height * random.uniform(-1, 1) for _ in range(3)]
-    # dst_triangle = np.float32([[x_offsets[0], y_offsets[0]],\
-    #                          [x_offsets[1], height + y_offsets[1]],\
-    #                          [width + x_offsets[2], y_offsets[2]]])
-    # warp_mat = cv2.getAffineTransform(src_triangle, dst_triangle)
-    warp_mat = []
+    src_triangle = np.float32([[0, 0], [0, height], [width, 0]])
+    x_offsets = [warp * width * random.uniform(-1, 1) for _ in range(3)]
+    y_offsets = [warp * height * random.uniform(-1, 1) for _ in range(3)]
+    dst_triangle = np.float32([[x_offsets[0], y_offsets[0]],\
+                             [x_offsets[1], height + y_offsets[1]],\
+                             [width + x_offsets[2], y_offsets[2]]])
+    warp_mat = cv2.getAffineTransform(src_triangle, dst_triangle)
+
 
     return rotation_mat, translation_mat, warp_mat 
 
@@ -316,8 +316,7 @@ class ShiftScale(object):
             if area_t/area > 0.50 and area_t > 50: #5x5x2 
                 image  = image_t
                 label  = label_t
-                weight = weight_t
-            
+                weight = weight_t        
             
 
         return {'image': image, 'label': label, 'weight': weight}

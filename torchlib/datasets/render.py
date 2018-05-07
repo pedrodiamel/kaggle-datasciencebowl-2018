@@ -4,11 +4,10 @@ import numpy as np
 import numpy.matlib as mth
 import cv2
 import random
-
 from skimage import color
 
-from deep.datasets import renderutility as utl
-from deep.datasets import colorchecker as chc
+from . import renderutility as utl
+from . import colorchecker as chc
 
 class ObjectType:
     
@@ -156,7 +155,7 @@ class ColorCheckerRender(object):
     # K = np.array([[10, 0, 0],[0, 10, 0],[0, 0, 1]]);
     # R = utl.angle2mat([np.pi/4,0,np.pi/4]);
     # t = np.array([[0,0,-10]]);
-    # cc = Render().chartcolorboard( K, R, t);
+    # cc = ColorCheckerRender().chartcolorboard( K, R, t);
     # plt.figure(1)
     # utl.plotchart(cc[0])
     # utl.plotbbox(cc[2]);
@@ -187,7 +186,7 @@ class ColorCheckerRender(object):
         R = utl.angle2mat(fi);
 
         # Get color chart
-        stype, chart, box, bbox, chartcolor, boxsize = Render().chartcolorboard( K, R, t, itype);
+        stype, chart, box, bbox, chartcolor, boxsize = ColorCheckerRender().chartcolorboard( K, R, t, itype);
         
         # Is truncate
         truncation = utl.isboxtruncate(box, im.shape );
@@ -268,7 +267,7 @@ class ColorCheckerRender(object):
             t  = np.array([[tx, ty, tz]]);
             
             # generate
-            im_i, cct = Render().getsyntheticcharcolorimage(im[:,:,:].copy(), K, fi, t, itype);            
+            im_i, cct = ColorCheckerRender().getsyntheticcharcolorimage(im[:,:,:].copy(), K, fi, t, itype);            
             if cct.truncation == 1: 
                 continue;
 
@@ -299,7 +298,7 @@ class ColorCheckerRender(object):
         labels = [];
         for i in range(n):
             im = data[i,...][:,:,(2, 1, 0)];
-            im, cc = Render().getsyntheticmultcharcolorimage(im, num);
+            im, cc = ColorCheckerRender().getsyntheticmultcharcolorimage(im, num);
             
             # data
             data[i,...] = im[:,:,(2, 1, 0)];
@@ -321,7 +320,7 @@ class ColorCheckerRender(object):
         '''
         Generate for image   
         '''           
-        im, cc = Render().getsyntheticmultcharcolorimage(im, num);
+        im, cc = ColorCheckerRender().getsyntheticmultcharcolorimage(im, num);
         labels= list();
         for c in cc:              
             gt = DetectionGT();
@@ -336,7 +335,7 @@ class ColorCheckerRender(object):
         '''
         Generate image and mask   
         '''           
-        im, cc = Render().getsyntheticmultcharcolorimage(im, num);
+        im, cc = ColorCheckerRender().getsyntheticmultcharcolorimage(im, num);
         mask = np.zeros(im.shape[:2], dtype="uint8") * 255
         for i in range( len(cc) ):
             bbox = np.array([cc[i].box])
@@ -345,3 +344,90 @@ class ColorCheckerRender(object):
         return im, mask;
 
  
+class Render(object):
+    
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def to_rgb(self, img):
+        img = img.reshape(img.shape[0], img.shape[1])
+        img[np.isnan(img)] = 0
+        img -= np.amin(img)
+        img /= np.amax(img)
+        blue = np.clip(4*(0.75-img), 0, 1)
+        red  = np.clip(4*(img-0.25), 0, 1)
+        green= np.clip(44*np.fabs(img-0.5)-1., 0, 1)
+        rgb = np.stack((red, green, blue), axis=2)
+        rgb = (rgb*255).astype( np.uint8 )
+        return rgb
+
+
+class CircleRender(Render):
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+    @staticmethod
+    def generatecircle( n, m, cnt, rmin, rmax, border, sigma ):
+        
+        mask = np.zeros( (n,m), dtype=np.uint8 );
+        cx = random.randint(border, m-border);
+        cy = random.randint(border, n-border);       
+        r  = random.randint(rmin, rmax);
+        h  = random.randint(1, 255);
+        center = [cx, cy]
+        mask = cv2.circle(mask, (cx,cy), r, 1, -1 ) ;
+
+        return mask, center, r, h
+
+
+    @staticmethod
+    def generate(n, m, cnt, rmin, rmax, border, sigma, btouch ):
+        '''
+          @param n,m dim
+          @param cnt
+          @param rmin,rmax
+          @param border
+          @param sigma
+          @param btouch
+         
+          n = 512; m = 512; cnt = 5;
+          rmin = 5; rmax = 50;
+          border = 90;
+          sigma = 20;
+          img, label = CircleRender.generate( n, m, cnt, rmin, rmax, border, sigma, true)        
+        '''
+
+        images = np.ones( (n,m) );
+        labels = np.zeros( (cnt,n,m), dtype=bool );
+        centers = np.zeros( (cnt,2) );
+        radios  = np.zeros( (cnt,1) );
+
+        k=0
+        for i in range(cnt):
+            
+            mask, center, r, h = CircleRender().generatecircle( n, m, cnt, rmin, rmax, border, sigma )
+
+            if btouch:
+                d = np.sum((centers[:k,:]-center)**2, axis=1)**0.5;
+                if np.sum(d<(r+radios[:k]-1)) != 0 : 
+                    continue; 
+
+            images[mask==1] = h
+            labels[k,...] = mask                 
+            centers[i,:] = center;
+            radios[i] = r;
+            k+=1
+
+        #images = img + sigma*randn(size(img));
+        #images = img - min(img(:));
+        #img = img./max(img(:));
+
+        metadata = {
+            'centers': centers,
+            'radios': radios,
+        } 
+
+        return images, labels, metadata
+

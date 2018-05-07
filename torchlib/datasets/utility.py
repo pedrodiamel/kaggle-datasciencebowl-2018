@@ -34,6 +34,11 @@ def imagecrop( image, cropsize, top, left ):
     if bchannel: imagecrop = imagecrop[:,:,0]
     return imagecrop
 
+
+
+
+
+
 def image_to_array(image, channels=None):
     """
     Returns an image as a np.array

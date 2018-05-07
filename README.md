@@ -47,6 +47,17 @@ To use Visdom in the browser:
 
     ./run_submission.sh
 
-## Urls
+## URLs
 
 - https://towardsdatascience.com/instance-embedding-instance-segmentation-without-proposals-31946a7c53e1
+- https://github.com/bodokaiser/piwise/blob/master/piwise/network.py
+- https://github.com/lopuhin
+- https://github.com/mattmacy/vnet.pytorch/blob/master/train.py
+- https://github.com/milesial/Pytorch-UNet/blob/master/myloss.py
+- https://github.com/lyakaap
+- https://github.com/mdbloice/Augmentor
+- https://github.com/kuangliu
+- https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
+
+
+

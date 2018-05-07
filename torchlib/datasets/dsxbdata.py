@@ -52,7 +52,6 @@ class DSXBDataset(Dataset):
                 ext
                 )
 
-
         self.transform = transform      
 
     def __len__(self):

@@ -1,4 +1,4 @@
-from deep import datasets
-from deep import netmodels
+from torchlib import datasets
+from torchlib import netmodels
 
 
