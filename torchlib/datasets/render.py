@@ -349,18 +349,37 @@ class Render(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def istouch(self, centers, radios, c, r):
+        d = np.sum((centers-c)**2, axis=1)**0.5;
+        return np.sum( (d<(r+radios)).astype(np.int) ) != 0
+        
+
     @staticmethod
-    def to_rgb(self, img):
-        img = img.reshape(img.shape[0], img.shape[1])
+    def to_rgb(img):
+        
+        img = img.astype(np.float32)
         img[np.isnan(img)] = 0
         img -= np.amin(img)
         img /= np.amax(img)
+
         blue = np.clip(4*(0.75-img), 0, 1)
         red  = np.clip(4*(img-0.25), 0, 1)
-        green= np.clip(44*np.fabs(img-0.5)-1., 0, 1)
+        green= np.clip(4*np.fabs(img-0.5)-1., 0, 1)
+
         rgb = np.stack((red, green, blue), axis=2)
         rgb = (rgb*255).astype( np.uint8 )
+
         return rgb
+
+    @staticmethod
+    def to_blur(img, sigma=0.1):        
+        H,W  = img.shape
+        img = img.astype(np.float32)/255.0
+        noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
+        noise = noise.reshape(H,W)
+        noisy = img + noise
+        noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+        return noisy
 
 
 class CircleRender(Render):
@@ -370,7 +389,6 @@ class CircleRender(Render):
 
     @staticmethod
     def generatecircle( n, m, cnt, rmin, rmax, border, sigma ):
-        
         mask = np.zeros( (n,m), dtype=np.uint8 );
         cx = random.randint(border, m-border);
         cy = random.randint(border, n-border);       
@@ -378,41 +396,39 @@ class CircleRender(Render):
         h  = random.randint(1, 255);
         center = [cx, cy]
         mask = cv2.circle(mask, (cx,cy), r, 1, -1 ) ;
-
         return mask, center, r, h
 
 
     @staticmethod
     def generate(n, m, cnt, rmin, rmax, border, sigma, btouch ):
         '''
-          @param n,m dim
-          @param cnt
-          @param rmin,rmax
-          @param border
-          @param sigma
-          @param btouch
-         
-          n = 512; m = 512; cnt = 5;
-          rmin = 5; rmax = 50;
-          border = 90;
-          sigma = 20;
-          img, label = CircleRender.generate( n, m, cnt, rmin, rmax, border, sigma, true)        
+            @param n,m dim
+            @param cnt
+            @param rmin,rmax
+            @param border
+            @param sigma
+            @param btouch
+
+            # Example       
+            n = 512; m = 512; cnt = 5;
+            rmin = 5; rmax = 50;
+            border = 90;
+            sigma = 20;
+            img, label, meta = CircleRender.generate( n, m, cnt, rmin, rmax, border, sigma, true)        
+        
         '''
 
-        images = np.ones( (n,m) );
+        images = np.ones( (n,m), dtype=np.uint8 );
         labels = np.zeros( (cnt,n,m), dtype=bool );
         centers = np.zeros( (cnt,2) );
-        radios  = np.zeros( (cnt,1) );
+        radios  = np.zeros( (cnt,) );
 
         k=0
         for i in range(cnt):
             
             mask, center, r, h = CircleRender().generatecircle( n, m, cnt, rmin, rmax, border, sigma )
-
-            if btouch:
-                d = np.sum((centers[:k,:]-center)**2, axis=1)**0.5;
-                if np.sum(d<(r+radios[:k]-1)) != 0 : 
-                    continue; 
+            if btouch and Render().istouch(centers[:k,:],radios[:k],center,r): 
+                continue; 
 
             images[mask==1] = h
             labels[k,...] = mask                 
@@ -420,9 +436,9 @@ class CircleRender(Render):
             radios[i] = r;
             k+=1
 
-        #images = img + sigma*randn(size(img));
-        #images = img - min(img(:));
-        #img = img./max(img(:));
+        images = Render().to_blur(images, sigma=sigma)
+        images = Render().to_rgb(images) 
+        #images = cv2.cvtColor(images, cv2.COLOR_GRAY2RGB)
 
         metadata = {
             'centers': centers,

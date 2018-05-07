@@ -9,7 +9,7 @@ from torchlib.datasets.render import CircleRender
 n = 512; m = 512; cnt = 5;
 rmin = 5; rmax = 50;
 border = 90;
-sigma = 20;
+sigma = 0.2;
 img, label, meta = CircleRender.generate( n, m, cnt, rmin, rmax, border, sigma, True) 
 
 plt.figure( figsize=(10,10) )

@@ -564,45 +564,41 @@ def do_unsharp(image, size=9, strength=0.25, alpha=5 ):
 
 #noise
 def do_gaussian_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
-
-    noise = np.random.normal(0,sigma,(H,W))
+    #noise = np.random.normal(0,sigma,(H,W))
+    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
+    noise = noise.reshape(H,W)
     noisy = gray + noise
-
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     return image
 
 def do_speckle_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
-
     noise = sigma*np.random.randn(H,W)
     noisy = gray + gray * noise
-
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     return image
 
 def do_inv_speckle_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
-
     noise = sigma*np.random.randn(H,W)
     noisy = gray + (1-gray) * noise
-
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     return image
 
 # elif noise_type == "salt_and_pepper":
