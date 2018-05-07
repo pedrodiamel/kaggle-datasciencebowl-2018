@@ -22,6 +22,7 @@ data = SynteticCircleDataset(
         count=100,
         transform=transforms.Compose([
               mtrans.ToLinealMotionBlur(prob=0.8),
+              mtrans.ToGaussianBlur(prob=1.0),
               mtrans.ToTensor()
             ])
         )

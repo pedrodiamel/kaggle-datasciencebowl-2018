@@ -1,6 +1,9 @@
 
-import numpy as np
 import torch
+import numpy as np
+import cv2
+
+from . import utility as utl
 
 class ObjectTransform(object):
     def __init__(self, image ):
@@ -16,9 +19,72 @@ class ObjectTransform(object):
     def motion_blur(self, gen):        
         self.image, reg = gen.generate( self.image ) 
 
+    def gaussian_blur(self, wnd):
+        self.image = cv2.GaussianBlur(self.image, (wnd, wnd), 0); 
+
     #colors transforms
+    def add_noise(self, noise):
+        
+        image = self.image
+        assert( np.any( image.shape[:2] == noise.shape ) )
+
+        lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+        gray, a, b = cv2.split(lab)    
+        gray = gray.astype(np.float32)/255
+        
+        H,W  = gray.shape
+        noisy = gray + noise
+        noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+
+        lab   = cv2.merge((noisy, a, b))
+        image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+        self.image = image
+
+
+    def brightness(self, alpha):
+        img = self.image
+        maxval = np.max(img[..., :3])
+        dtype = img.dtype
+        img[..., :3] = utl.clip(alpha * img[...,:3].astype(np.float32), dtype, maxval)
+        self.image = img
+
+
+    def brightness_shift(self, alpha):
+        img = self.image
+        maxval = np.max(img[..., :3])
+        dtype = img.dtype
+        img[..., :3] = clip(alpha * 255 + img[...,:3].astype(np.float32), dtype, maxval)
+        self.image = img
+
+    def contrast(self, alpha):
+        img = self.image
+        gray = cv2.cvtColor(img[:, :, :3], cv2.COLOR_RGB2GRAY).astype(np.float32)
+        gray = (3.0 * (1.0 - alpha) / gray.size) * np.sum(gray)
+        maxval = np.max(img[..., :3])
+        dtype = img.dtype
+        img[:, :, :3] = clip(alpha * img[:, :, :3].astype(np.float32) + gray, dtype, maxval)
+        self.image = img      
+
+    def gamma_correction(self, gamma):   
+        image = self.image
+        table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
+		for i in np.arange(0, 256)]).astype("uint8")
+            image = cv2.LUT(image, table) # apply gamma correction using the lookup table  
+        self.image = image
+
+    def clahe(self, clipLimit, tileGridSize):
+        image = self.image
+        img_yuv = cv2.cvtColor(im, cv2.COLOR_RGB2YUV)
+        clahe = cv2.createCLAHE(clipLimit=clipLimit, tileGridSize=tileGridSize)
+        img_yuv[:, :, 0] = clahe.apply(img_yuv[:, :, 0])
+        self.image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
+
+
 
     #geometric transforms
+
+
+
 
     #pytorch transform
     def to_tensor(self):

@@ -18,6 +18,125 @@ from scipy import ndimage
 import skimage.morphology as morph
 import skfmm
 
+#tranformations 
+
+def isrgb( image ):
+    return len(image.shape)==2 or (image.shape==3 and image.shape[2]==1)
+
+def to_rgb( image ):
+    #to rgb
+    if isrgb( image ):
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    return image
+
+def to_gray( image ):
+    if not isrgb( image ):
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    return image
+
+def to_channels( image, ch ):
+    if ch == 1:
+        image = to_gray( image )[:,:,np.newaxis]
+    elif ch == 3:
+        image = to_rgb( image )
+    else:
+        assert(False)
+    return image
+
+
+def cunsqueeze(data):
+    if len( data.shape ) == 2: 
+        data = data[:,:,np.newaxis]
+    return data   
+
+def clip(img, dtype, maxval):
+    return np.clip(img, 0, maxval).astype(dtype)
+
+def relabel( mask ):
+    h, w = mask.shape
+    relabel_dict = {}
+    for i, k in enumerate(np.unique(mask)):
+        if k == 0:
+            relabel_dict[k] = 0
+        else:
+            relabel_dict[k] = i
+    for i, j in product(range(h), range(w)):
+        mask[i, j] = relabel_dict[mask[i, j]]
+    return mask
+
+def scale(image, x1, y1, x2, y2, dx, dy, size0x, size0y, sizex, sizey, limit, mode ): 
+    y1 = dy; y2 = y1 + sizey
+    x1 = dx; x2 = x1 + sizex
+    image_pad = cv2.copyMakeBorder(image, limit, limit, limit, limit, borderType=cv2.BORDER_CONSTANT,value=[0,0,0])
+    image_pad = cunsqueeze(image_pad)
+    image_t = cv2.resize(image_pad[y1:y2, x1:x2, :], (size0x, size0y), interpolation=mode)
+    image_t = cunsqueeze(image_t) 
+    return image_t
+
+def to_unsharp(image, size=9, strength=0.25, alpha=5 ):
+    
+    image = image.astype(np.float32)
+    size  = 1+2*(int(size)//2)
+    strength = strength*255
+    blur  = cv2.GaussianBlur(image, (size,size), strength)
+    image = alpha*image + (1-alpha)*blur
+    image = np.clip(image, 0, 255).astype(np.uint8)
+    
+    return image
+
+
+def to_gaussian_noise(image, sigma=0.5):
+    
+
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    gray, a, b = cv2.split(lab)    
+    gray = gray.astype(np.float32)/255
+    
+    H,W  = gray.shape
+    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
+    noise = noise.reshape(H,W)
+    noisy = gray + noise
+    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+
+    lab   = cv2.merge((noisy, a, b))
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+
+    return image
+
+
+def to_speckle_noise(image, sigma=0.5):
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    gray, a, b = cv2.split(lab)
+    gray = gray.astype(np.float32)/255
+    H,W  = gray.shape
+
+    noise = np.array([random.random() for i in range(H*W)])
+    noise = noise.reshape(H,W)
+    noisy = gray + gray * noise
+
+    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+    lab   = cv2.merge((noisy, a, b))
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+    return image
+
+
+def do_inv_speckle_noise(image, sigma=0.5):
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    gray, a, b = cv2.split(lab)
+    gray = gray.astype(np.float32)/255
+    H,W  = gray.shape
+
+    noise = sigma*random.randn(H,W)
+    noise = np.array([random.random() for i in range(H*W)])
+    noise = noise.reshape(H,W)
+    noisy = gray + (1-gray) * noise
+
+    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+    lab   = cv2.merge((noisy, a, b))
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+    return image
+
+
 
 def imagecrop( image, cropsize, top, left ):
     
@@ -35,26 +154,6 @@ def imagecrop( image, cropsize, top, left ):
     return imagecrop
 
 
-def to_rgb( image ):
-    #to rgb
-    if len(image.shape)==2 or (image.shape==3 and image.shape[2]==1):
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    return image
-
-def to_gray( image ):
-    if len(image.shape) != 2:
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    return image
-
-def to_channels( image, ch ):
-    if ch == 1:
-        image = to_gray( image )
-        image = image[:,:,np.newaxis]
-    elif ch == 3:
-        image = to_rgb( image )
-    else:
-        assert(False)
-    return image
 
 def to_one_hot( x, nc ):
     y = np.zeros((nc)); y[x] = 1.0
@@ -74,25 +173,6 @@ def ffftshift2(h):
     H = np.fft.fft2(h)
     H = np.abs( np.fft.fftshift( H ) )
     return H
-
-#noise
-def noise(image, sigma=0.5):
-    
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-    gray, a, b = cv2.split(lab)
-    gray = gray.astype(np.float32)/255
-    H,W  = gray.shape
-
-    #noise = np.random.normal(0,sigma,(H,W))
-    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
-    noise = noise.reshape(H,W)
-    noisy = gray + noise
-
-    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
-    lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-    return image
-
 
 
 def image_to_array(image, channels=None):

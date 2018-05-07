@@ -29,6 +29,7 @@ import itertools
 
 from .grid_sample import grid_sample
 from .tps_grid_gen import TPSGridGen
+from . import utility as utl
 
 
 import warnings
@@ -36,34 +37,7 @@ warnings.filterwarnings("ignore")
 
 from . import utility as utl
 
-def cunsqueeze(data):
-    if len( data.shape ) == 2: 
-        data = data[:,:,np.newaxis]
-    return data   
 
-def clip(img, dtype, maxval):
-    return np.clip(img, 0, maxval).astype(dtype)
-
-def relabel( mask ):
-    h, w = mask.shape
-    relabel_dict = {}
-    for i, k in enumerate(np.unique(mask)):
-        if k == 0:
-            relabel_dict[k] = 0
-        else:
-            relabel_dict[k] = i
-    for i, j in product(range(h), range(w)):
-        mask[i, j] = relabel_dict[mask[i, j]]
-    return mask
-
-def scale(image, x1, y1, x2, y2, dx, dy, size0x, size0y, sizex, sizey, limit, mode ): 
-    y1 = dy; y2 = y1 + sizey
-    x1 = dx; x2 = x1 + sizex
-    image_pad = cv2.copyMakeBorder(image, limit, limit, limit, limit, borderType=cv2.BORDER_CONSTANT,value=[0,0,0])
-    image_pad = cunsqueeze(image_pad)
-    image_t = cv2.resize(image_pad[y1:y2, x1:x2, :], (size0x, size0y), interpolation=mode)
-    image_t = cunsqueeze(image_t) 
-    return image_t
 
 
 # ELASTIC TRANSFORMATION
@@ -522,262 +496,6 @@ class ElasticTorchDistort(object):
 
 
 
-class ToTensor(object):
-    """Convert ndarrays in sample to Tensors."""
-
-    def __call__(self, sample):
-        image, label, weight = sample['image'], sample['label'], sample['weight'] 
-        label = (label>0).astype(np.uint8)
-        
-        # label_t = np.zeros( (label.shape[0],label.shape[1],3) )
-        # label_t[:,:,0] = label[:,:,0]==0
-        # label_t[:,:,1] = label[:,:,0]==1
-        # label_t[:,:,2] = label[:,:,0]==2
-        # label = label_t
-
-        # swap color axis because
-        # numpy image: H x W x C
-        # torch image: C X H X W        
-        image  = image.transpose((2, 0, 1)).astype(np.float)
-        label  = label.transpose((2, 0, 1)).astype(np.float)
-        weight = weight.transpose((2, 0, 1)).astype(np.float)
-
-        return {'image': torch.from_numpy(image).float(),
-                'label': torch.from_numpy(label).float(),
-                'weight': torch.from_numpy(weight).float(),
-               }
-
-
-
-#//////////////////////////////////////////////////////////////////////////
-# Image Tranformers
-# https://github.com/asanakoy/kaggle_carvana_segmentation/blob/master/albu/src/transforms.py
-# https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
-
-
-class ToMotionBlurLineal(object):
-    """Lineal Blur randomly the image in a sample.
-    """
-
-    def __init__(self, lmax=100, prob=0.5,):        
-        """Initialization
-        Args:
-            lmax: max length of blur
-        """
-        gen = blurrender.BlurRender(lmax)
-        self.gen = gen;
-        self.prob = prob
-
-    def __call__(self, sample):
-                
-        image = sample['image']
-        if random.random() < self.prob:
-            imblur, reg = self.gen.generatelineal( image )
-            image = imblur
-            
-        sample['image'] = image
-        return sample
-
-
-class ToMotionBlur(object):
-    """Not Motion Blur randomly the image in a sample.
-    """
-
-    def __init__(self,         
-        pSFsize=64,
-        maxTotalLength=64,
-        anxiety=0.005,
-        numT=2000,
-        texp=0.75, 
-        prob=0.5,
-        ):        
-        """Initialization
-        Args:
-            lmax: max length of blur
-        """
-        gen = blurrender.BlurRender(pSFsize, maxTotalLength, anxiety, numT, texp)
-        self.gen = gen;
-        self.prob = prob
-
-    def __call__(self, sample):
-                
-        image = sample['image']
-        
-        if random.random() < self.prob:
-            imblur, psnr, coef = self.gen.generatecurve( image )
-            image = imblur
-
-        sample['image'] = image
-        return sample
-
-
-def do_unsharp(image, size=9, strength=0.25, alpha=5 ):
-    image = image.astype(np.float32)
-    size  = 1+2*(int(size)//2)
-    strength = strength*255
-    blur  = cv2.GaussianBlur(image, (size,size), strength)
-    image = alpha*image + (1-alpha)*blur
-    image = np.clip(image, 0, 255).astype(np.uint8)
-    return image
-
-#noise
-def do_gaussian_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    gray, a, b = cv2.split(lab)
-    gray = gray.astype(np.float32)/255
-    H,W  = gray.shape
-
-    #noise = np.random.normal(0,sigma,(H,W))
-																																																																			    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
-    noise = noise.reshape(H,W)
-    noisy = gray + noise
-
-    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
-    lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-    return image
-
-def do_speckle_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    gray, a, b = cv2.split(lab)
-    gray = gray.astype(np.float32)/255
-    H,W  = gray.shape
-
-    noise = sigma*np.random.randn(H,W)
-    noisy = gray + gray * noise
-
-    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
-    lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-    return image
-
-def do_inv_speckle_noise(image, sigma=0.5):
-    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    gray, a, b = cv2.split(lab)
-    gray = gray.astype(np.float32)/255
-    H,W  = gray.shape
-
-    noise = sigma*np.random.randn(H,W)
-    noisy = gray + (1-gray) * noise
-
-    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
-    lab   = cv2.merge((noisy, a, b))
-    image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-    return image
-
-# elif noise_type == "salt_and_pepper":
-#     salt_pepper_ratio = 0.5
-#     noisy    = np.copy(gray)
-#
-#     num_salt = np.ceil(limit * H*W * salt_pepper_ratio)
-#     coords = [np.random.randint(0, i - 1, int(num_salt)) for i in gray.shape]
-#     noisy[coords] = 1
-#
-#     num_pepper = np.ceil(amount* H*W * (1. - salt_pepper_ratio))
-#     coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in gray.shape]
-#     noisy[coords] = 0
-#
-# elif noise_type == "poisson":
-#     num_values = len(np.unique(gray))
-#     num_values = 2 ** np.ceil(np.log2(num_values))
-#     noisy      = np.random.poisson(gray * num_values) / float(num_values)
-
-
-class RandomGaussianBlur(object):
-    
-    def __init__(self, prob=0.5):
-        self.prob = prob     
-
-    def __call__(self, image):        
-
-        if random.random() < self.prob:
-
-            row,col,ch = image.shape
-            image = do_gaussian_noise(image, 0.0001  )
-            wnd = random.randint(1,3) * 2 + 1
-            image = cv2.GaussianBlur(image, (wnd, wnd), 0);             
-
-        return image
-
-class RandomFilter:
-    """
-    blur sharpen, etc
-    """
-    def __init__(self, limit=.5, prob=.5):
-        self.limit = limit
-        self.prob = prob
-
-    def __call__(self, img):
-        if random.random() < self.prob:
-            alpha = self.limit * random.uniform(0, 1)
-            kernel = np.ones((3, 3), np.float32)/9 * 0.2
-
-            colored = img[..., :3]
-            colored = alpha * cv2.filter2D(colored, -1, kernel) + (1-alpha) * colored
-            maxval = np.max(img[..., :3])
-            dtype = img.dtype
-            img[..., :3] = clip(colored, dtype, maxval)
-
-        return img
-
-# brightness, contrast, saturation-------------
-# from mxnet code, see: https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
-
-## illumination ====================================================================================
-
-class RandomBrightness:
-    def __init__(self, limit=0.1, prob=0.5):
-        self.limit = limit
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob:
-            alpha = 1.0 + self.limit*random.uniform(-1, 1)
-            maxval = np.max(img[..., :3])
-            dtype = img.dtype
-            img[..., :3] = clip(alpha * img[...,:3].astype(np.float32), dtype, maxval)
-        return img
-
-class RandomBrightnessShift:
-    def __init__(self, limit=0.125, prob=0.5):
-        self.limit = limit
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob: 
-            alpha = 1.0 + self.limit*random.uniform(-1, 1)
-            maxval = np.max(img[..., :3])
-            dtype = img.dtype
-            img[..., :3] = clip(alpha * 255 + img[...,:3].astype(np.float32), dtype, maxval)
-        return img
-
-class RandomContrast:
-    def __init__(self, limit=0.1, prob=.5):
-        self.limit = limit
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob:
-            alpha = 1.0 + self.limit*random.uniform(-1, 1)
-            gray = cv2.cvtColor(img[:, :, :3], cv2.COLOR_RGB2GRAY).astype(np.float32)
-            gray = (3.0 * (1.0 - alpha) / gray.size) * np.sum(gray)
-            maxval = np.max(img[..., :3])
-            dtype = img.dtype
-            img[:, :, :3] = clip(alpha * img[:, :, :3].astype(np.float32) + gray, dtype, maxval)
-        return img
-
-
-#https://www.pyimagesearch.com/2015/10/05/opencv-gamma-correction/
-class RandomGamma:
-    def __init__(self, limit=0.5, prob=.5):
-        self.limit = limit
-        self.prob = prob
-    def __call__(self, image):        
-
-        if random.random() < self.prob:     
-            gamma = 1.0 + self.limit*random.uniform(-1, 1)      
-            table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
-		        for i in np.arange(0, 256)]).astype("uint8")
-            image = cv2.LUT(image, table) # apply gamma correction using the lookup table
-        return image
-
 
 class CLAHE(object):
     
@@ -802,9 +520,10 @@ class RandomSaturation:
     def __call__(self, img):
         # dont work :(
         if random.random() < self.prob:
+            
+            alpha = 1.0 + random.uniform(-self.limit, self.limit)
             maxval = np.max(img[..., :3])
             dtype = img.dtype
-            alpha = 1.0 + random.uniform(-self.limit, self.limit)
             gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB).astype( np.float32 )
             img[..., :3] = alpha * img[..., :3].astype( np.float32 ) + (1.0 - alpha) * gray

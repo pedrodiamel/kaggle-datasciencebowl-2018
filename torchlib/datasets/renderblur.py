@@ -110,8 +110,7 @@ class BlurRender(object):
         # blur 
         imblur = cv2.filter2D(image, -1, psf )            
         # noise
-        imnoise = utl.noise(imblur, sigma=0.001)
-        #imnoise = imblur
+        imnoise = utl.to_gaussian_noise(imblur, sigma=0.001)
                 
         # metric reference
         psnr =  self._psnr(image, imnoise);
