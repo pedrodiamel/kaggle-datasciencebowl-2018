@@ -383,9 +383,9 @@ class Render(object):
 
 
 class CircleRender(Render):
-    def __init__(self, *args, **kwargs):
+    
+    def __init__(self ):
         pass
-
 
     @staticmethod
     def generatecircle( n, m, cnt, rmin, rmax, border, sigma ):
@@ -417,6 +417,8 @@ class CircleRender(Render):
             img, label, meta = CircleRender.generate( n, m, cnt, rmin, rmax, border, sigma, true)        
         
         '''
+
+        
 
         images = np.ones( (n,m), dtype=np.uint8 );
         labels = np.zeros( (cnt,n,m), dtype=bool );

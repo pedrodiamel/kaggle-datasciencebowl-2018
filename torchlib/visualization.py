@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import deep.datasets.imageutl as imutl
+from .datasets import imageutl as imutl
 
 
 def torgb(im):

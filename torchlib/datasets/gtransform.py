@@ -26,14 +26,15 @@ import math
 
 import time
 import itertools
-from deep.datasets.grid_sample import grid_sample
-from deep.datasets.tps_grid_gen import TPSGridGen
+
+from .grid_sample import grid_sample
+from .tps_grid_gen import TPSGridGen
 
 
 import warnings
 warnings.filterwarnings("ignore")
 
-from deep.datasets import utility as utl
+from . import utility as utl
 
 def cunsqueeze(data):
     if len( data.shape ) == 2: 
@@ -287,8 +288,7 @@ class ShiftScale(object):
         limit = self.limit
         if random.random() < self.prob:
             
-            height, width, channel = image.shape
-            
+            height, width, channel = image.shape            
             #assert(width == height)
 
             size0x = width
@@ -518,6 +518,10 @@ class ElasticTorchDistort(object):
                     
         return {'image': image, 'label': label, 'weight': weight}
 
+
+
+
+
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
@@ -546,12 +550,66 @@ class ToTensor(object):
 
 
 #//////////////////////////////////////////////////////////////////////////
-# Color Tranformers
+# Image Tranformers
 # https://github.com/asanakoy/kaggle_carvana_segmentation/blob/master/albu/src/transforms.py
 # https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
 
 
-## filter ====================================================================================
+class ToMotionBlurLineal(object):
+    """Lineal Blur randomly the image in a sample.
+    """
+
+    def __init__(self, lmax=100, prob=0.5,):        
+        """Initialization
+        Args:
+            lmax: max length of blur
+        """
+        gen = blurrender.BlurRender(lmax)
+        self.gen = gen;
+        self.prob = prob
+
+    def __call__(self, sample):
+                
+        image = sample['image']
+        if random.random() < self.prob:
+            imblur, reg = self.gen.generatelineal( image )
+            image = imblur
+            
+        sample['image'] = image
+        return sample
+
+
+class ToMotionBlur(object):
+    """Not Motion Blur randomly the image in a sample.
+    """
+
+    def __init__(self,         
+        pSFsize=64,
+        maxTotalLength=64,
+        anxiety=0.005,
+        numT=2000,
+        texp=0.75, 
+        prob=0.5,
+        ):        
+        """Initialization
+        Args:
+            lmax: max length of blur
+        """
+        gen = blurrender.BlurRender(pSFsize, maxTotalLength, anxiety, numT, texp)
+        self.gen = gen;
+        self.prob = prob
+
+    def __call__(self, sample):
+                
+        image = sample['image']
+        
+        if random.random() < self.prob:
+            imblur, psnr, coef = self.gen.generatecurve( image )
+            image = imblur
+
+        sample['image'] = image
+        return sample
+
 
 def do_unsharp(image, size=9, strength=0.25, alpha=5 ):
     image = image.astype(np.float32)
@@ -568,10 +626,12 @@ def do_gaussian_noise(image, sigma=0.5):
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
+
     #noise = np.random.normal(0,sigma,(H,W))
-    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
+																																																																			    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
     noise = noise.reshape(H,W)
     noisy = gray + noise
+
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
     image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
@@ -582,8 +642,10 @@ def do_speckle_noise(image, sigma=0.5):
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
+
     noise = sigma*np.random.randn(H,W)
     noisy = gray + gray * noise
+
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
     image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
@@ -594,8 +656,10 @@ def do_inv_speckle_noise(image, sigma=0.5):
     gray, a, b = cv2.split(lab)
     gray = gray.astype(np.float32)/255
     H,W  = gray.shape
+
     noise = sigma*np.random.randn(H,W)
     noisy = gray + (1-gray) * noise
+
     noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
     lab   = cv2.merge((noisy, a, b))
     image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
@@ -619,7 +683,6 @@ def do_inv_speckle_noise(image, sigma=0.5):
 #     noisy      = np.random.poisson(gray * num_values) / float(num_values)
 
 
-# # COLOR SEGMENTATION
 class RandomGaussianBlur(object):
     
     def __init__(self, prob=0.5):
@@ -630,15 +693,7 @@ class RandomGaussianBlur(object):
         if random.random() < self.prob:
 
             row,col,ch = image.shape
-            # mean = 0
-            # var = 0.1
-            # sigma = var**0.5
-            # gauss = np.array([random.gauss(mean,sigma) for i in range(row*col*ch)])
-            # gauss = gauss.reshape(row,col,ch)
-            # image = image + 10*(gauss)
-            # image = np.uint8(np.clip(image,0,255)) 
-
-            image = do_gaussian_noise(image, 0.01**0.5  )
+            image = do_gaussian_noise(image, 0.0001  )
             wnd = random.randint(1,3) * 2 + 1
             image = cv2.GaussianBlur(image, (wnd, wnd), 0);             
 
@@ -665,7 +720,6 @@ class RandomFilter:
 
         return img
 
-
 # brightness, contrast, saturation-------------
 # from mxnet code, see: https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
 
@@ -688,7 +742,7 @@ class RandomBrightnessShift:
         self.limit = limit
         self.prob = prob
     def __call__(self, img):
-        if random.random() < self.prob:
+        if random.random() < self.prob: 
             alpha = 1.0 + self.limit*random.uniform(-1, 1)
             maxval = np.max(img[..., :3])
             dtype = img.dtype
@@ -855,50 +909,45 @@ class ColorPermutation(object):
             img = img[:,:, indexs ]
         return img
 
+
+
+
 class ColorDistort(object):
     '''
-    Color distortion and normalization
+    Color distortion
     '''
+    def __init__( self, tranforms=['brightness', 'gamma'] ):
+        
+        self.tranforms = tranforms
+        self.dispach = {
+            'brightness': RandomBrightness(),
+            'hue_value': RandomHueSaturationValue(),
+            'hue_shift': RandomHueSaturationShift(),
+            'contrast': RandomContrast(),
+            'gaussian_blur': RandomGaussianBlur(),
+            'negative': Negative(prob=0.15),
+            'gray': Grayscale(prob=0.15),
+            'change_channel': ColorPermutation(),
+            'gamma': RandomGamma(),
+            'brightness_shift': RandomBrightnessShift(),        
+            'clahe': CLAHE(),
+        }
 
-    def __init__( self ):
-        self.randomBrightness = RandomBrightness()
-        self.randomHueSaturationValue = RandomHueSaturationValue(  )
-        self.randomContrast = RandomContrast()
-        self.clahe = CLAHE()
-        self.randomGaussianBlur = RandomGaussianBlur()
-        self.negative = Negative()
-        self.gray = Grayscale()
-        self.colorchange = ColorPermutation()
-        self.randomHueSaturationShift = RandomHueSaturationShift()
-        self.randomGamma = RandomGamma()
-        self.randomBrightnessShift = RandomBrightnessShift()
+        assert( all(x in self.dispach.keys()  for x in tranforms ) )
 
     def __call__(self, sample):
         
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-        
-        #RandomBrightness, RandomHueSaturationValue
-        #RandomContrast, RandomFilter
+        image = sample['image'] 
+        for k in self.tranforms:
+            image = self.dispach[k](image)    
 
-        # apply tranform
-        image = self.randomBrightness(image)
-        image = self.randomHueSaturationValue(image)
-        image = self.randomHueSaturationShift(image)
-        image = self.randomContrast(image)  
-        image = self.randomGamma(image) 
-        ####image = self.randomBrightnessShift(image)      
-        
-        image = self.colorchange(image)
-        image = self.negative(image)
-        image = self.gray(image)
-        image = self.randomGaussianBlur(image)        
-        #image = self.clahe(image)
-        
-        return {'image': image, 'label': label, 'weight': weight}
+        image  = cunsqueeze(image)    
+        sample['image'] = image
+        return sample
 
 
 
-def tnormalize(tensor, mean, std):
+def to_mean_normalize(tensor, mean, std):
     """Normalize a tensor image with mean and standard deviation.
     See ``Normalize`` for more details.
     Args:
@@ -915,27 +964,32 @@ def tnormalize(tensor, mean, std):
         result_tensor.append(t.sub_(m).div_(s))
     return torch.stack(result_tensor, 0)
 
-
+def to_white_normalize(tensor):
+    
+    new_tensor = []
+    for t in tensor:
+        t = t.sub_( t.min() )
+        t = t.div_( t.max() )
+        new_tensor.append( t )        
+    return torch.stack(new_tensor, 0)
+    
 
 class Normalize(object):
     '''
-    Color distortion and normalization
+    Color normalization
     '''
 
-    def __init__( self ):
-        pass
+    def __init__( self, type='white' ):
+        self.type = type
 
     def __call__(self, sample):
         
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        new_image = []
-        for im in image:
-            im = im.sub_( im.min() )
-            im = im.div_( im.max() )
-            new_image.append( im )        
-        image = torch.stack(new_image, 0)  
-
-        #image = image.mean( dim=0 ).unsqueeze(dim=0)
-       
-        return {'image': image, 'label': label, 'weight': weight}
+        image  = sample['image']
+        if self.type == 'white':
+            image = to_white_normalize(image)
+        elif self.type == 'mean':
+            image = to_mean_normalize(image)
+        else: assert(False)
+               
+        sample['image'] = image
+        return  sample

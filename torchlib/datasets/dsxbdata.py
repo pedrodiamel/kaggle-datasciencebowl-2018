@@ -15,7 +15,7 @@ from skimage import color
 import warnings
 warnings.filterwarnings("ignore")
 
-from deep.datasets import imageutl as imutl
+from . import imageutl as imutl
 
 
 train = 'train'
@@ -81,6 +81,7 @@ class DSXBDataset(Dataset):
         sample = {'image': image_t, 'label':label_t, 'weight':weight_t }
         if self.transform: 
             sample = self.transform(sample)
+        
         return sample
 
 

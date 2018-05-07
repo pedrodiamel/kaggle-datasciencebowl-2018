@@ -14,10 +14,14 @@ import cv2
 import warnings
 warnings.filterwarnings("ignore")
 
-from deep.datasets import render as rnd
-from deep.datasets import imageutl as imutl
-from deep.datasets import weightmaps as wmap
-from deep.datasets import utility
+from .render import ColorCheckerRender, CircleRender, EllipseRender
+from .aumentation import ObjectImageMaskAndWeightTransform
+
+from . import imageutl as imutl
+from . import weightmaps as wmap
+from . import utility
+
+
 
 class SyntheticColorCheckerDataset(Dataset):
     '''
@@ -33,7 +37,7 @@ class SyntheticColorCheckerDataset(Dataset):
         """            
         
         self.data = imutl.imageProvide(pathname, ext=ext);
-        self.ren = rnd.Render();
+        self.ren = ColorCheckerRender();
         self.transform = transform      
 
     def __len__(self):
@@ -65,7 +69,6 @@ class SyntheticColorCheckerDataset(Dataset):
             sample = self.transform(sample)
         return sample
 
-
 class SynteticColorCheckerExDataset(Dataset):
     '''
     Mnagement for Synthetic Color Checker dataset
@@ -82,7 +85,7 @@ class SynteticColorCheckerExDataset(Dataset):
         """            
         
         self.data = imutl.imageProvide(pathname, ext=ext);
-        self.ren = rnd.Render();
+        self.ren = ColorCheckerRender();
         self.transform = transform 
         self.count = count
         self.idx_base = idx_base     
@@ -115,3 +118,66 @@ class SynteticColorCheckerExDataset(Dataset):
         if self.transform: 
             sample = self.transform(sample)
         return sample
+
+
+
+class SynteticCircleDataset(Dataset):
+    '''
+    Mnagement for Synthetic Circle dataset
+    '''
+
+    def __init__(self, 
+        count=100,
+        cnt=5,
+        imsize=(512, 512),
+        rmin=5, rmax=50,
+        border=90,
+        sigma=0.2,
+        btouch=True,
+        transform=None,
+        ):
+        """           
+        """            
+        
+        self.ren = CircleRender();
+        self.count = count
+        self.imsize= imsize
+        self.cnt = cnt
+        self.rmin = rmin
+        self.rmax = rmax
+        self.border = border
+        self.sigma = sigma
+        self.btouch = btouch
+        self.transform = transform 
+    
+
+    def __len__(self):
+        return self.count
+
+    def __getitem__(self, idx):   
+        
+        image, masks, meta = self.ren.generate( 
+            self.imsize[0], self.imsize[1], self.cnt, self.rmin, 
+            self.rmax, self.border, self.sigma, 
+            self.btouch)
+
+        mask = masks.max(0)
+        #weight = wmap.getweightmap( mask )     
+        weight = wmap.getunetweightmap(mask, masks )
+        
+        image_t = image        
+        label_t = np.zeros( (mask.shape[0], mask.shape[1], 2) )
+        label_t[:,:,0] = (mask <= 0).astype( np.uint8 )
+        label_t[:,:,1] = (mask > 0).astype( np.uint8 )
+        weight_t = weight
+
+        #label_t = label_t[:,:,np.newaxis] 
+        weight_t = weight[:,:,np.newaxis] 
+
+        obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
+        if self.transform: 
+            sample = self.transform( obj )
+
+        return obj.to_tensor()
+
+

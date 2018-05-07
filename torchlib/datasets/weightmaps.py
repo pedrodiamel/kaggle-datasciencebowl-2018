@@ -27,35 +27,6 @@ from scipy import ndimage
 #
 
 
-# #weight map
-# def getweightmap(mask):    
-#     assert mask.size > 0
-#     w_c = np.empty(mask.shape)        
-#     frac0 = np.sum(mask == 0) / float(mask.size)
-#     frac1 = np.sum(mask == 1) / float(mask.size)    
-#     assert frac0 > 0
-#     assert frac1 > 0
-#     # Calculate
-#     w_c[mask == 0] = 0.5 / (frac0)
-#     w_c[mask == 1] = 0.5 / (frac1)    
-#     return w_c
-
-
-#weight map
-def getweightmap(mask):
-    
-    w_c = np.empty(mask.shape)
-    classes = np.unique(mask)
-    frecs = [ np.sum(mask == i)/float(mask.size) for i in classes ] 
-            
-    # Calculate
-    n = len(classes)
-    for i in range( n ):
-        w_c[mask == i] = 1 / (n*frecs[i])
-    
-    return w_c
-
-
 def getunetweightmap( merged_mask, masks, w0=10, sigma=5, ):
     
     # WxHxN to NxWxH
@@ -75,10 +46,23 @@ def getunetweightmap( merged_mask, masks, w0=10, sigma=5, ):
     w = w_c + w0*w_b;
     
     #weight = 1 + (merged_mask == 0) * w
-    weight = w
+    weight = 1 + w
         
     return weight
 
 
+#weight map
+def getweightmap(mask):
+    
+    w_c = np.empty(mask.shape)
+    classes = np.unique(mask)
+    frecs = [ np.sum(mask == i)/float(mask.size) for i in classes ] 
+            
+    # Calculate
+    n = len(classes)
+    for i in range( n ):
+        w_c[mask == i] = 1 / (n*frecs[i])
+    
+    return w_c
 
     

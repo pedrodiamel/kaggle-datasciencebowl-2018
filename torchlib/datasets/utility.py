@@ -35,7 +35,63 @@ def imagecrop( image, cropsize, top, left ):
     return imagecrop
 
 
+def to_rgb( image ):
+    #to rgb
+    if len(image.shape)==2 or (image.shape==3 and image.shape[2]==1):
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    return image
 
+def to_gray( image ):
+    if len(image.shape) != 2:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    return image
+
+def to_channels( image, ch ):
+    if ch == 1:
+        image = to_gray( image )
+        image = image[:,:,np.newaxis]
+    elif ch == 3:
+        image = to_rgb( image )
+    else:
+        assert(False)
+    return image
+
+def to_one_hot( x, nc ):
+    y = np.zeros((nc)); y[x] = 1.0
+    return y
+
+def summary(image):
+    print(image.shape, image.min(), image.max())
+
+def norm_fro(a,b): 
+    return np.sum( (a-b)**2.0 );
+
+def complex2vector(c):
+    '''complex to vector'''    
+    return np.concatenate( ( c.real, c.imag ) , axis=1 )
+
+def ffftshift2(h):    
+    H = np.fft.fft2(h)
+    H = np.abs( np.fft.fftshift( H ) )
+    return H
+
+#noise
+def noise(image, sigma=0.5):
+    
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    gray, a, b = cv2.split(lab)
+    gray = gray.astype(np.float32)/255
+    H,W  = gray.shape
+
+    #noise = np.random.normal(0,sigma,(H,W))
+    noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
+    noise = noise.reshape(H,W)
+    noisy = gray + noise
+
+    noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
+    lab   = cv2.merge((noisy, a, b))
+    image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    return image
 
 
 
