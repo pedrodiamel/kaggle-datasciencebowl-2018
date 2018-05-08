@@ -1,9 +1,11 @@
 
 import random
 import numpy as np
+import cv2
 
 from .renderblur import BlurRender
 from .aumentation import ObjectTransform
+from . import functional as F
 
 
 class ToTransform(object):
@@ -202,3 +204,21 @@ class CLAHE(ToTransform):
 
 
 
+class ToResizeUNetFoV(object):
+    """Resize to unet fov
+    """
+    
+    def __init__(self, fov=388, padding_mode=cv2.BORDER_CONSTANT):
+        """Initialization
+        Args:
+            @fov: size input layer for unet model
+        """
+        self.fov=fov
+        self.padding_mode = padding_mode
+        
+    def __call__(self,obj):
+        obj.to_unet_input( self.fov, self.padding_mode )
+        return obj
+    
+    def __str__(self):
+        return self.__class__.__name__

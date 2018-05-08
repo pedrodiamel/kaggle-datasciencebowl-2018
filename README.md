@@ -62,3 +62,15 @@ To use Visdom in the browser:
 
 ## Other
 curlwget https://chrome.google.com/webstore/detail/curlwget/jmocjfidanebdlinpbcdkcmgdifblncg?hl=es
+
+<!-- 
+# BORDER_CONSTANT 	
+# BORDER_REPLICATE 	
+# BORDER_REFLECT 	
+# BORDER_WRAP 	
+# BORDER_REFLECT_101 	
+# BORDER_TRANSPARENT 	
+# BORDER_REFLECT101 	
+# BORDER_DEFAULT 	
+# BORDER_ISOLATED 	 
+-->

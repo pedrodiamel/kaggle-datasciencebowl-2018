@@ -40,134 +40,15 @@ from . import utility as utl
 
 
 
-# ELASTIC TRANSFORMATION
-def elastic_transform(shape, size_grid, deform):
-        
-    m,n=shape[:2]
-    grid_x, grid_y = np.mgrid[:m,:n]
-    
-    source = [] 
-    destination = []
-
-    for i in range(int(m/size_grid)+1):
-        for j in range(int(n/size_grid)+1):            
-            source = source + [np.array([i*size_grid, j*size_grid])]
-            noisex = round(random.uniform(-deform,deform))
-            noisey = round(random.uniform(-deform,deform))
-            noise  = np.array( [noisex,noisey] )
-            if i==0 or j==0 or i==int(m/size_grid) or j==int(n/size_grid): noise = np.array([0,0])
-            destination = destination + [np.array([i*size_grid, j*size_grid])+noise ]
-
-    source=np.vstack(source)
-    destination=np.vstack(destination)
-    destination[destination<0] = 0
-    destination[destination>=n] = n-1
-    
-    grid_z = griddata(destination, source, (grid_x, grid_y), method='cubic')
-
-    map_x = np.append([], [ar[:,1] for ar in grid_z]).reshape(m,n)
-    map_y = np.append([], [ar[:,0] for ar in grid_z]).reshape(m,n)
-    map_x_32 = map_x.astype('float32')
-    map_y_32 = map_y.astype('float32')
-
-    return map_x_32, map_y_32
-
-def torch_elastic_transform(shape, size_grid, deform):
-    
-    target_height, target_width = shape[:2]
-    target_control_points = torch.Tensor(list(itertools.product(
-        torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
-        torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
-        )))
-
-    source_control_points = target_control_points + torch.Tensor(target_control_points.size()).uniform_(-deform, deform)
-    tps = TPSGridGen(target_height, target_width, target_control_points)
-    source_coordinate = tps(Variable(torch.unsqueeze(source_control_points, 0)))
-    grid = source_coordinate.view(1, target_height, target_width, 2)
-    
-    return grid
-
-# GEOMETRICAL TRANSFORM
-def geometric_transform( imsize, degree, translation, warp ):
-    """
-    Transform the image for data augmentation
-    Arguments:
-        * degree: Max rotation angle, in degrees. Direction of rotation is random.
-        * translation: Max translation amount in both x and y directions,
-            expressed as fraction of total image width/height
-        * warp: Max warp amount for each of the 3 reference points,
-            expressed as fraction of total image width/height
-
-    Returns:
-        * Transformed input as an np.array() object
-    """
-
-    height, width = imsize[:2]
-    degree = degree * math.pi / 180
-
-    # Rotation
-    center = (width//2, height//2)
-    theta = random.uniform(-degree, degree)
-    rotation_mat = cv2.getRotationMatrix2D(center, -theta*180/math.pi, 1)
-    
-    # Translation
-    x_offset = translation * width * random.uniform(-1, 1)
-    y_offset = translation * height * random.uniform(-1, 1)
-    translation_mat = np.float32( np.array([[1, 0, x_offset], [0, 1, y_offset]]) )
-
-    # # Warp
-    # # NOTE: The commented code below is left for reference
-    # # The warp function tends to blur the image, so it is not useds
-    
-    src_triangle = np.float32([[0, 0], [0, height], [width, 0]])
-    x_offsets = [warp * width * random.uniform(-1, 1) for _ in range(3)]
-    y_offsets = [warp * height * random.uniform(-1, 1) for _ in range(3)]
-    dst_triangle = np.float32([[x_offsets[0], y_offsets[0]],\
-                             [x_offsets[1], height + y_offsets[1]],\
-                             [width + x_offsets[2], y_offsets[2]]])
-    warp_mat = cv2.getAffineTransform(src_triangle, dst_triangle)
 
 
-    return rotation_mat, translation_mat, warp_mat 
 
-# UNET RESIZE
-def size_unet_transform(imagein, size=512, mode=cv2.INTER_CUBIC): 
-    
-    height, width, ch = imagein.shape;
-    image = np.array(imagein.copy())
-    
-    asp = float(height)/width
-    w = size
-    h = int(w*asp)
 
-    #resize mantaining aspect ratio
-    #image_x = scipy.misc.imresize(image, (h,w), interp='bilinear', mode=mode)
-    image_x = cv2.resize(image, (w,h) , interpolation = mode)
-    
-    # unzquese
-    if len(image_x.shape) == 2:
-        image_x = image_x[:,:,np.newaxis]
-    image = np.zeros((w,w,ch))
 
-    #crop image
-    ini = int(round((w-h) / 2.0))
-    image[ini:ini+h,:,:] = image_x
 
-    #unet required input size
-    downsampleFactor = 16;
-    d4a_size   = 0;
-    padInput   = (((d4a_size *2 +2 +2)*2 +2 +2)*2 +2 +2)*2 +2 +2;
-    padOutput  = ((((d4a_size -2 -2)*2-2 -2)*2-2 -2)*2-2 -2)*2-2 -2;
-    d4a_size   = math.ceil( (size - padOutput)/downsampleFactor);
-    input_size = downsampleFactor*d4a_size + padInput;
 
-    offset=(input_size-size)//2
-    image_x = np.zeros((input_size,input_size, ch));
 
-    #crop for required size
-    image_x[ offset:-offset, offset:-offset, : ] = image
-    
-    return image_x
+
 
 # RESIZE
 class UnetResize(object):
@@ -187,6 +68,10 @@ class UnetResize(object):
         weight_t = size_unet_transform(weight, self.imsize, mode=cv2.INTER_LINEAR )
         
         return {'image': image_t, 'label': label_t, 'weight': weight_t}
+
+
+
+
 
 class RandomCrop(object):
     '''

@@ -33,8 +33,6 @@ def unet_transform_image_size(image, size=388):
     image = np.zeros((w,w,3));
     ini = int(round((w-h) / 2.0));
     image[ini:ini+h,:,:] = image_x;
-
-    #image = image/255.0
     
     downsampleFactor = 16;
     d4a_size= 0;
@@ -61,7 +59,6 @@ def inv_transform_image_size(image, imshape, asp):
     h = int(width*(asp));    
     ini = int(round((w-h) / 2.0));
     image_x = image[ini:h+ini,:,:];
-    #image_x = scipy.misc.imresize(image_x, imshape, interp='bilinear', mode='F');
     image_x = cv2.resize(image_x, (imshape[1],imshape[0]) , interpolation = cv2.INTER_CUBIC)
 
     return image_x;

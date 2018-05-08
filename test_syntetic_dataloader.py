@@ -9,6 +9,7 @@ from torchvision import transforms, utils
 import csv
 from skimage import color
 import scipy.misc
+import cv2
 
 from torchlib.datasets.syntheticdata import SynteticCircleDataset
 from torchlib.datasets import transforms as mtrans
@@ -23,6 +24,7 @@ data = SynteticCircleDataset(
         transform=transforms.Compose([
               mtrans.ToLinealMotionBlur(prob=0.8),
               mtrans.ToGaussianBlur(prob=1.0),
+              mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
               mtrans.ToTensor()
             ])
         )
