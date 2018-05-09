@@ -350,8 +350,10 @@ class Render(object):
         pass
 
     def istouch(self, centers, radios, c, r):
+        
+        if len(centers)==0: return False
         d = np.sum((centers-c)**2, axis=1)**0.5;
-        return np.sum( (d<(r+radios)).astype(np.int) ) != 0
+        return np.any( (d < (r+radios) ) ) 
         
 
     @staticmethod
@@ -419,8 +421,6 @@ class CircleRender(Render):
         
         '''
 
-        
-
         images = np.ones( (n,m), dtype=np.uint8 );
         labels = np.zeros( (cnt,n,m), dtype=bool );
         centers = np.zeros( (cnt,2) );
@@ -430,7 +430,7 @@ class CircleRender(Render):
         for i in range(cnt):
             
             mask, center, r, h = CircleRender().generatecircle( n, m, cnt, rmin, rmax, border, sigma )
-            if btouch and Render().istouch(centers[:k,:],radios[:k],center,r): 
+            if btouch and Render().istouch(centers[:k+1,:],radios[:k+1],center,r): 
                 continue; 
 
             images[mask==1] = h
@@ -501,7 +501,7 @@ class EllipseRender(Render):
         for i in range(cnt):
             
             mask, center, axis, h = EllipseRender().generateellipse( n, m, cnt, rmin, rmax, border, sigma )
-            if btouch and Render().istouch(centers[:k,:],axiss[:k,1],center,axis[1]): 
+            if btouch and Render().istouch(centers[:k+1,:],axiss[:k+1,1],center,axis[1]): 
                 continue; 
 
             images[mask==1] = h
