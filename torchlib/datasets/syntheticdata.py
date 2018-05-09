@@ -119,8 +119,6 @@ class SynteticColorCheckerExDataset(Dataset):
             sample = self.transform(sample)
         return sample
 
-
-
 class SynteticCircleDataset(Dataset):
     '''
     Mnagement for Synthetic Circle dataset

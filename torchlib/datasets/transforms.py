@@ -203,6 +203,7 @@ class CLAHE(ToTransform):
 
 
 
+# geometrical transforms
 
 class ToResizeUNetFoV(object):
     """Resize to unet fov
@@ -222,3 +223,5 @@ class ToResizeUNetFoV(object):
     
     def __str__(self):
         return self.__class__.__name__
+
+
