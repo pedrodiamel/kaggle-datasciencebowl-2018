@@ -263,34 +263,45 @@ def square_resize(image, newsize, interpolate_mode, padding_mode):
 
 
 # UNET RESIZE
-def resize_unet_transform(imagein, size, interpolate_mode, padding_mode): 
+def resize_unet_transform(image, size, interpolate_mode, padding_mode): 
     
-    height, width, ch = imagein.shape
-    image = np.array(imagein.copy())
+    height, width, ch = image.shape
     
-    if height < width:
-        asp = float(height)/width
-        w = size
-        h = int(w*asp)
-    else:
-        asp = float(width)/height 
-        h = size
-        w = int(h*asp) 
-        
-    #resize mantaining aspect ratio
-    image = cv2.resize(image, (w,h) , interpolation = interpolate_mode)
-    image = cunsqueeze(image)
-
     #unet required input size
     downsampleFactor = 16
     d4a_size   = 0
     padInput   = (((d4a_size *2 +2 +2)*2 +2 +2)*2 +2 +2)*2 +2 +2
-    padOutput  = ((((d4a_size -2 -2)*2-2 -2)*2-2 -2)*2-2 -2)*2-2 -2
+    padOutput  = ((((d4a_size -2 -2)*2-2 -2)*2-2 -2)*2-2 -2)*2-2 -2    
     d4a_size   = math.ceil( (size - padOutput)/downsampleFactor)
-    input_size = downsampleFactor*d4a_size + padInput
-
-    image = square_resize(image, input_size, interpolate_mode, padding_mode)
+    input_size  = downsampleFactor*d4a_size + padInput
+    output_size = downsampleFactor*d4a_size + padOutput;
     
+    if height < width:
+        asp = float(height)/width
+        w = output_size
+        h = int(w*asp)
+    else:
+        asp = float(width)/height 
+        h = output_size
+        w = int(h*asp) 
+        
+    #resize mantaining aspect ratio
+    image = cv2.resize(image, (w,h), interpolation = interpolate_mode)
+    image = cunsqueeze(image)
+
+    borderX = float(input_size-w)/2.0
+    borderY = float(input_size-h)/2.0
+
+    padxL = int(np.floor( borderY ))
+    padxR = int(np.ceil(  borderY )) 
+    padyT = int(np.floor( borderX ))
+    padyB = int(np.ceil(  borderX )) 
+
+    #image = square_resize(image, input_size, interpolate_mode, padding_mode)
+    image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
+    image = cv2.resize(image, (input_size, input_size) , interpolation = interpolate_mode)    
+    image = cunsqueeze(image)
+
     return image
 
 
