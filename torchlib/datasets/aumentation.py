@@ -168,6 +168,7 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
     
     #pytorch transform
     def to_tensor(self):
+        
         image  = self.image
         mask   = (self.mask>0).astype(np.uint8)
         weight = self.weight

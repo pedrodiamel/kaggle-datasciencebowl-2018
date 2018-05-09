@@ -21,7 +21,7 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(630,230),
+        imsize=(512,512),
         transform=transforms.Compose([
               mtrans.ToLinealMotionBlur(prob=0.8),
               mtrans.ToGaussianBlur(prob=1.0),
