@@ -109,7 +109,7 @@ class ToGaussianBlur(ToTransform):
         noise = noise.reshape(H,W)
         obj.add_noise( noise )
         wnd = random.randint(1,3) * 2 + 1
-        obj.gaussian_blur(wnd)    
+        obj.gaussian_blur(wnd)
         return obj
 
 

@@ -165,7 +165,7 @@ class SynteticCircleDataset(Dataset):
         #weight = wmap.getweightmap( mask )     
         weight = wmap.getunetweightmap(mask, masks )
         
-        image_t = image        
+        image_t = image
         label_t = np.zeros( (mask.shape[0], mask.shape[1], 2) )
         label_t[:,:,0] = (mask <= 0).astype( np.uint8 )
         label_t[:,:,1] = (mask > 0).astype( np.uint8 )

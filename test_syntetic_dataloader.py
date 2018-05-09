@@ -21,10 +21,11 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(512,512),
+        imsize=(350,350),
+        sigma=0.01,
         transform=transforms.Compose([
-              mtrans.ToLinealMotionBlur(prob=0.8),
-              mtrans.ToGaussianBlur(prob=1.0),
+              #mtrans.ToLinealMotionBlur(prob=0.8),
+              #mtrans.ToGaussianBlur(prob=1.0),
               mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
               mtrans.ToTensor()
             ])
@@ -53,10 +54,11 @@ for i_batch, sample_batched in enumerate(dataloader):
 
     print(image_a.shape)
     print( np.unique(label) )
+    print(image_a.min(), image_a.max())
         
     plt.figure( figsize=(15,15) )
     plt.subplot(131)
-    plt.imshow( image_a.permute(1,2,0).squeeze()) #, cmap='gray' 
+    plt.imshow( image_a.permute(1,2,0).squeeze()/255  ) #, cmap='gray' 
     plt.axis('off')
     plt.ioff()
 

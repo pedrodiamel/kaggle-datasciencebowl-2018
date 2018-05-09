@@ -372,12 +372,13 @@ class Render(object):
         return rgb
 
     @staticmethod
-    def to_blur(img, sigma=0.1):        
-        H,W  = img.shape
+    def to_noise(img, sigma=0.1):        
+        
+        H,W = img.shape[:2]
         img = img.astype(np.float32)/255.0
         noise = np.array([random.gauss(0,sigma) for i in range(H*W)])
         noise = noise.reshape(H,W)
-        noisy = img + noise
+        noisy = img + noise     
         noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
         return noisy
 
@@ -438,7 +439,7 @@ class CircleRender(Render):
             radios[i] = r;
             k+=1
 
-        images = Render().to_blur(images, sigma=sigma)
+        images = Render().to_noise(images, sigma=sigma)
         images = Render().to_rgb(images) 
 
         metadata = {
@@ -509,7 +510,7 @@ class EllipseRender(Render):
             axiss[i,:] = axis;
             k+=1
 
-        images = Render().to_blur(images, sigma=sigma)
+        images = Render().to_noise(images, sigma=sigma)
         images = Render().to_rgb(images) 
 
         metadata = {

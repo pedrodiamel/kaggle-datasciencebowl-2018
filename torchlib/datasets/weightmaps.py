@@ -26,7 +26,6 @@ from scipy import ndimage
 #
 #
 
-
 def getunetweightmap( merged_mask, masks, w0=10, sigma=5, ):
     
     # WxHxN to NxWxH
@@ -43,11 +42,11 @@ def getunetweightmap( merged_mask, masks, w0=10, sigma=5, ):
 
     w_b = np.exp(-(d1+d2)**2/(2*sigma**2)).astype(np.float32)
     w_c = getweightmap(merged_mask)
-    w = w_c + w0*w_b;
+    w = w_c + w0*w_b
     
     #weight = 1 + (merged_mask == 0) * w
     weight = 1 + w
-        
+    
     return weight
 
 
