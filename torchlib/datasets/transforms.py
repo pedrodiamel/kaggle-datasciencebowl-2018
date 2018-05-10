@@ -274,7 +274,6 @@ class RandomCrop(object):
             x = random.randint( -self.limit, (w - newW) + self.limit )
             y = random.randint( -self.limit, (h - newH) + self.limit )
             if obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] ):
-                print(obj.size() )
                 return obj
 
         return self.centecrop(obj)
