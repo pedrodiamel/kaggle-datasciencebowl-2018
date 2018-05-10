@@ -21,12 +21,14 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(350,350),
+        imsize=(400,450),
         sigma=0.01,
         transform=transforms.Compose([
               #mtrans.ToLinealMotionBlur(prob=0.8),
               #mtrans.ToGaussianBlur(prob=1.0),
-              mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
+              #mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
+              #mtrans.CenterCrop( (200,200) ),
+              mtrans.RandomCrop( (150,120), limit=50 ),
               mtrans.ToTensor()
             ])
         )
@@ -77,6 +79,6 @@ for i_batch, sample_batched in enumerate(dataloader):
     plt.show()        
 
     # observe 4th batch and stop.
-    if i_batch == 4: 
+    if i_batch == 1: 
         break        
 

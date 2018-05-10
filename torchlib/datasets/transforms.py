@@ -104,7 +104,7 @@ class ToGaussianBlur(ToTransform):
     def _execute(self, obj):
         
         # add gaussian noise
-        H,W = obj.image.shape[:2]
+        H,W = obj.shape[:2]
         noise = np.array([random.gauss(0,self.sigma) for i in range(H*W)])
         noise = noise.reshape(H,W)
         obj.add_noise( noise )
@@ -220,6 +220,64 @@ class ToResizeUNetFoV(object):
     def __call__(self,obj):
         obj.to_unet_input( self.fov, self.padding_mode )
         return obj
+    
+    def __str__(self):
+        return self.__class__.__name__
+
+
+
+class CenterCrop(object):
+    """Center Crop
+    """
+    
+    def __init__(self, cropsize ):
+        """Initialization
+        Args:
+            @cropsize [w,h]
+        """
+        self.cropsize = cropsize
+        
+    def __call__(self, obj):
+        h, w = obj.size()[:2]
+        x = (w - self.cropsize[0]) // 2
+        y = (h - self.cropsize[1]) // 2
+        obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] )
+
+        return obj
+    
+    def __str__(self):
+        return self.__class__.__name__
+
+
+class RandomCrop(object):
+    """Random Crop
+    """
+    
+    def __init__(self, cropsize, limit=10 ):
+        """Initialization
+        Args:
+            @cropsize [w,h]
+            @limit
+        """
+        self.cropsize = cropsize
+        self.limit = limit
+        self.centecrop = CenterCrop(cropsize)
+        
+    def __call__(self, obj):
+        h, w = obj.size()[:2]
+        newW,newH = self.cropsize
+
+        assert(w - newW + self.limit > 0)
+        assert(h - newH + self.limit > 0)
+
+        for _ in range(10):       
+            x = random.randint( -self.limit, (w - newW) + self.limit )
+            y = random.randint( -self.limit, (h - newH) + self.limit )
+            if obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] ):
+                print(obj.size() )
+                return obj
+
+        return self.centecrop(obj)
     
     def __str__(self):
         return self.__class__.__name__

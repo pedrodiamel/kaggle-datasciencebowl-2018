@@ -9,7 +9,9 @@ from . import functional as F
 class ObjectTransform(object):
     def __init__(self, image ):
         self.image = image
-    
+
+    def size(self): return self.image.shape
+
     #blur transforms
     
     ### lineal blur transform
@@ -87,8 +89,17 @@ class ObjectTransform(object):
         self.image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
 
-
     #geometric transforms
+    def crop( self, box):
+        """Crop: return if validate crop
+        """
+        self.image = F.imcrop( self.image, box )
+        return True
+
+
+    # resize unet input
+    def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
+        self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
 
 
 

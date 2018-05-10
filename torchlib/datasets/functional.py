@@ -48,13 +48,62 @@ def relabel( mask ):
     return mask
 
 def scale(image, x1, y1, x2, y2, dx, dy, size0x, size0y, sizex, sizey, limit, mode ): 
+    
     y1 = dy; y2 = y1 + sizey
     x1 = dx; x2 = x1 + sizex
     image_pad = cv2.copyMakeBorder(image, limit, limit, limit, limit, borderType=cv2.BORDER_CONSTANT,value=[0,0,0])
     image_pad = cunsqueeze(image_pad)
     image_t = cv2.resize(image_pad[y1:y2, x1:x2, :], (size0x, size0y), interpolation=mode)
-    image_t = cunsqueeze(image_t) 
+    image_t = cunsqueeze(image_t)     
     return image_t
+
+
+def is_box_inside(img, box ):
+    return box[0] < 0 or box[1] < 0 or box[2]+box[0] >= img.shape[1] or box[3]+box[1] >= img.shape[0]
+
+def pad_img_to_fit_bbox(img, box):
+    
+    x1,y1,x2,y2 = box
+    x2 = x1+x2; y2 = y1+y2
+
+    padxL = np.abs(np.minimum(0, y1))
+    padxR = np.maximum(y2 - img.shape[0], 0)
+    padyT = (np.abs(np.minimum(0, x1)))
+    padyB = np.maximum(x2 - img.shape[1], 0)
+    img = cv2.copyMakeBorder(img, padxL, padxR, padyT, padyB, borderType=cv2.BORDER_CONSTANT )
+    
+    # img = np.pad(
+    #     img, ((np.abs(np.minimum(0, y1)), np.maximum(y2 - img.shape[0], 0)),
+    #           (np.abs(np.minimum(0, x1)), np.maximum(x2 - img.shape[1], 0)), 
+    #           (0,0)), mode="constant")  
+
+    img = cunsqueeze(img)
+    y2 += np.abs(np.minimum(0, y1))
+    y1 += np.abs(np.minimum(0, y1))
+    x2 += np.abs(np.minimum(0, x1))
+    x1 += np.abs(np.minimum(0, x1))
+
+    return img, [ x1, y1, x2-x1, y2-y1 ]
+
+
+def imcrop( image, box ):
+    """ Image crop
+    Args
+        @image
+        @box: [x,y,w,h]
+    """    
+    h, w, c = image.shape
+    if is_box_inside(image, box):
+        image, box = pad_img_to_fit_bbox(image, box)    
+    x, y, new_w, new_h = box
+    imagecrop = image[y:y + new_h, x:x + new_w, : ]   
+    imagecrop = cunsqueeze(imagecrop)
+
+    return imagecrop
+
+
+
+
 
 def unsharp(image, size=9, strength=0.25, alpha=5 ):
     
@@ -120,20 +169,8 @@ def inv_speckle_noise(image, sigma=0.5):
 
 
 
-def imagecrop( image, cropsize, top, left ):
-    
-    #if mult channel
-    bchannel = False
-    if len(image.shape) != 3:
-        image = image[:,:,np.newaxis ]
-        bchannel = True
-    
-    h, w, c = image.shape
-    new_h, new_w = cropsize
-    imagecrop = image[top:top + new_h, left:left + new_w, : ]
-    
-    if bchannel: imagecrop = imagecrop[:,:,0]
-    return imagecrop
+
+
 
 
 

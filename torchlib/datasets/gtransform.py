@@ -38,30 +38,7 @@ warnings.filterwarnings("ignore")
 from . import utility as utl
 
 
-class CenterCrop(object):
-    
-    def __init__(self, height, width):
-        self.height = height
-        self.width = width
 
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-        
-        h, w, c = image.shape
-        dy = (h - self.height) // 2
-        dx = (w - self.width)  // 2
-
-        y1 = dy
-        y2 = y1 + self.height
-        x1 = dx
-        x2 = x1 + self.width
-
-        image_t  =  image[y1:y2, x1:x2, :]
-        label_t  =  label[y1:y2, x1:x2, :]
-        weight_t = weight[y1:y2, x1:x2, :]
-
-        return {'image': image_t, 'label': label_t, 'weight': weight_t}
 
 class RandomCrop(object):
     '''
