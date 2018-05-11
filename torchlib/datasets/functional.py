@@ -16,6 +16,7 @@ import skimage.morphology as morph
 from skimage import io, transform, morphology, filters
 import skimage.color as skcolor
 import skimage.util as skutl
+from scipy.interpolate import griddata
 
 from scipy import ndimage
 import scipy.misc
@@ -47,15 +48,12 @@ def relabel( mask ):
         mask[i, j] = relabel_dict[mask[i, j]]
     return mask
 
-
 def scale(image, sxy, mode, padding_mode ): 
 
     h,w = image.shape[:2]
     image = cv2.resize(image, None, fx=sxy, fy=sxy, interpolation=mode ) 
-
     image = cunsqueeze(image)
     hn, wn = image.shape[:2]
-
     borderX = float( abs(wn-w) )/2.0
     borderY = float( abs(hn-h) )/2.0
     padxL = int(np.floor( borderY ))
@@ -63,13 +61,26 @@ def scale(image, sxy, mode, padding_mode ):
     padyT = int(np.floor( borderX ))
     padyB = int(np.ceil(  borderX ))
 
-    if sxy < 1:  
-        image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
-    else:
-        image = image[ padyT:padyT+h, padxL:padxL+w, : ]
+    if sxy < 1:  image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
+    else: image = image[ padyT:padyT+h, padxL:padxL+w, : ]
 
     image = cunsqueeze(image)    
     return image
+
+def hflip( x ): 
+    return cv2.flip(x,1)
+
+def vflip( x ):
+    return cv2.flip(x,0)
+
+def rotate90( x ): 
+    return cv2.flip(x.transpose(1,0,2),1)
+
+def rotate180( x ): 
+    return cv2.flip(x,-1)
+
+def rotate270( x ):
+    return cv2.flip(x.transpose(1,0,2),0)
 
 
 def is_box_inside(img, box ):
@@ -180,13 +191,8 @@ def inv_speckle_noise(image, sigma=0.5):
 
 
 
-
-
-
-
-
 # ELASTIC TRANSFORMATION
-def elastic_transform(shape, size_grid, deform):
+def get_elastic_transform(shape, size_grid, deform):
     """Get elastic tranform 
     Args:
         @shape: image shape
@@ -248,7 +254,7 @@ def torch_elastic_transform(shape, size_grid, deform):
 
 
 # GEOMETRICAL TRANSFORM
-def geometric_transform( imsize, degree, translation, warp ):
+def get_geometric_random_transform( imsize, degree, translation, warp ):
     """Transform the image for data augmentation
     Args:
         @degree: Max rotation angle, in degrees. Direction of rotation is random.
@@ -286,6 +292,14 @@ def geometric_transform( imsize, degree, translation, warp ):
 
     return rotation_mat, translation_mat, warp_mat 
 
+
+def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode  ):
+    h,w = image.shape[:2] 
+    image = cv2.warpAffine(image, mat_r, (w,h), flags=interpolate_mode )
+    image = cv2.warpAffine(image, mat_t, (w,h), flags=interpolate_mode )
+    image = cv2.warpAffine(image, mat_w, (w,h), flags=interpolate_mode )
+    image = cunsqueeze(image)
+    return image
 
 
 def square_resize(image, newsize, interpolate_mode, padding_mode):

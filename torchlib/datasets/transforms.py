@@ -8,29 +8,38 @@ from .aumentation import ObjectTransform
 from . import functional as F
 
 
+
 class ToTransform(object):
-    """Generic transform 
+    """Abstrat class of Generic transform 
     """
     
-    def __init__(self, prob):
+    def __init__(self):
+        pass        
+    
+    def __str__(self):
+        return self.__class__.__name__
+
+
+
+class ToRandomTransform(ToTransform):
+    """Random transform: 
+    """
+    
+    def __init__(self, tran, prob):
         """Initialization
         Args:
+            @tran: class tranform 
             @prob: probability
         """
+        self.tran = tran 
         self.prob=prob
         
         
     def __call__(self,obj):
         if random.random() < self.prob:
-            obj = self._execute( obj )
+            obj = self.tran( obj )
         return obj
     
-    def _execute(self,obj):
-        pass
-    
-    def __str__(self):
-        return self.__class__.__name__
-
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
@@ -43,17 +52,14 @@ class ToLinealMotionBlur(ToTransform):
     """Lineal Blur randomly.
     """
 
-    def __init__(self, lmax=100, prob=0.5 ):        
+    def __init__(self, lmax=100  ):        
         """Initialization
         Args:
             @lmax: maximun lineal blur
-            @prob: probability
         """
-        super(ToLinealMotionBlur,self).__init__(prob)
         self.gen = BlurRender(lmax)
 
-
-    def _execute(self, obj):
+    def __call__(self, obj):
         obj.lineal_blur(self.gen)
         return obj
 
@@ -67,8 +73,7 @@ class ToMotionBlur(ToTransform):
         maxTotalLength=64,
         anxiety=0.005,
         numT=2000,
-        texp=0.75,     
-        prob=0.5 ):        
+        texp=0.75, ):        
         """Initialization
         Args:
             @pSFsize: kernel size (psf)
@@ -76,13 +81,10 @@ class ToMotionBlur(ToTransform):
             @anxiety:
             @numT:
             @texp:
-            @prob: probability
         """
-        super(ToMotionBlur,self).__init__(prob)
         self.gen = BlurRender(pSFsize, maxTotalLength, anxiety, numT, texp)
 
-
-    def _execute(self, obj):
+    def __call__(self, obj):
         obj.motion_blur(self.gen)
         return obj
 
@@ -92,19 +94,17 @@ class ToGaussianBlur(ToTransform):
     """Gaussian Blur randomly.
     """
 
-    def __init__(self, prob=0.5, sigma=0.2 ):        
+    def __init__(self, sigma=0.2 ):        
         """Initialization
         Args:
             @lmax: maximun lineal blur
-            @prob: probability
         """
-        super(ToGaussianBlur,self).__init__(prob)
         self.sigma = sigma
 
-    def _execute(self, obj):
+    def __call__(self, obj):
         
         # add gaussian noise
-        H,W = obj.shape[:2]
+        H,W = obj.size()[:2]
         noise = np.array([random.gauss(0,self.sigma) for i in range(H*W)])
         noise = noise.reshape(H,W)
         obj.add_noise( noise )
@@ -118,94 +118,86 @@ class ToGaussianBlur(ToTransform):
 class RandomBrightness(ToTransform):
     """Random Brightness.
     """
-    def __init__(self, prob=0.5, limit=0.1 ):        
+    def __init__(self, factor=0.1 ):        
         """Initialization
         Args:
-            @limit: limit
-            @prob: probability
+            @factor: factor
         """
-        super(RandomBrightness,self).__init__(prob)
-        self.limit = limit
+        self.factor = factor
 
-    def _execute(self, obj):
-        alpha = 1.0 + self.limit*random.uniform(-1, 1)
+    def __call__(self, obj):
+        alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness(alpha)
         return obj
+
 
 class RandomBrightnessShift(ToTransform):
     """Random Brightness Shift.
     """
-    def __init__(self, prob=0.5, limit=0.01 ):        
+    def __init__(self, factor=0.01 ):        
         """Initialization
         Args:
-            @limit: limit
-            @prob: probability
+            @factor: factor
         """
-        super(RandomBrightnessShift,self).__init__(prob)
-        self.limit = limit
+        self.factor = factor
 
-    def _execute(self, obj):
-        alpha = 1.0 + self.limit*random.uniform(-1, 1)
+    def __call__(self, obj):
+        alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness_shift(alpha)
         return obj
 
 class RandomContrast(ToTransform):
     """Random Contrast.
     """
-    def __init__(self, prob=0.5, limit=0.1 ):        
+    def __init__(self, factor=0.1 ):        
         """Initialization
         Args:
-            @limit: limit
-            @prob: probability
+            @factor: factor
         """
         super(RandomContrast,self).__init__(prob)
         self.limit = limit
 
-    def _execute(self, obj):
-        alpha = 1.0 + self.limit*random.uniform(-1, 1)
+    def __call__(self, obj):
+        alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness_shift(alpha)
         return obj
 
 class RandomGamma(ToTransform):
     """Random Gamma.
     """
-    def __init__(self, prob=0.5, limit=0.1 ):        
+    def __init__(self, factor=0.5, limit=0.1 ):        
         """Initialization
         Args:
-            @limit: limit
-            @prob: probability
+            @factor: factor
         """
-        super(RandomGamma,self).__init__(prob)
-        self.limit = limit
+        self.factor = factor
 
-    def _execute(self, obj):
-        alpha = 1.0 + self.limit*random.uniform(-1, 1)
+    def __call__(self, obj):
+        alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness_shift(alpha)
         return obj
 
 
 class CLAHE(ToTransform):
-    """Random Gamma.
+    """CLAHE ecualization.
     """
-    def __init__(self, prob=0.5, clipLimit=2.0, tileGridSize=(8, 8) ):        
+    def __init__(self, clipLimit=2.0, tileGridSize=(8, 8) ):        
         """Initialization
         Args:
-            @limit: limit
-            @prob: probability
+            @factor: factor
         """
-        super(CLAHE,self).__init__(prob)
-        self.clipLimit = clipLimit
+        self.clipfactor = clipfactor
         self.tileGridSize = tileGridSize
 
-    def _execute(self, obj):
-        obj.clahe(alpha)
+    def __call__(self, obj):
+        obj.clahe( self.clipfactor,  self.tileGridSize )
         return obj
 
 
 
 # geometrical transforms
 
-class ToResizeUNetFoV(object):
+class ToResizeUNetFoV(ToTransform):
     """Resize to unet fov
     """
     
@@ -221,12 +213,9 @@ class ToResizeUNetFoV(object):
         obj.to_unet_input( self.fov, self.padding_mode )
         return obj
     
-    def __str__(self):
-        return self.__class__.__name__
 
 
-
-class CenterCrop(object):
+class CenterCrop(ToTransform):
     """Center Crop
     """
     
@@ -242,14 +231,10 @@ class CenterCrop(object):
         x = (w - self.cropsize[0]) // 2
         y = (h - self.cropsize[1]) // 2
         obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] )
-
         return obj
     
-    def __str__(self):
-        return self.__class__.__name__
 
-
-class RandomCrop(object):
+class RandomCrop(ToTransform):
     """Random Crop
     """
     
@@ -277,30 +262,132 @@ class RandomCrop(object):
                 return obj
 
         return self.centecrop(obj)
-    
-    def __str__(self):
-        return self.__class__.__name__
 
 
 class RandomScale(ToTransform):
-    """ Random Scale.
+    """ SRandom Scale.
     """
-    def __init__(self, prob=0.5, sxy=0.1, 
-        padding_mode=cv2.BORDER_CONSTANT,  
+    def __init__(self, factor=0.1, padding_mode=cv2.BORDER_CONSTANT,  
         ):        
         """Initialization
         Args:
-            @prob: probability
-            @sxy: scale
+            @factor: factor of scale
             @padding_mode        
         """
-        super(RandomScale,self).__init__(prob)
-        self.sxy = sxy
+        self.factor = factor
         self.padding_mode = padding_mode
 
-    def _execute(self, obj):
-        
+    def __call__(self, obj):        
         height, width = obj.size()[:2]
-        sxy =  1.0 + self.sxy*random.uniform(-1.0, 1.0)
-        obj.scale( sxy, self.padding_mode )
+        factor =  1.0 + self.factor*random.uniform(-1.0, 1.0)
+        obj.scale( factor, self.padding_mode )
         return obj
+
+
+class HFlip(ToTransform):
+    """ Horizontal Flip.
+    """
+    def __init__(self):        
+        """Initialization 
+        """
+        pass
+
+    def __call__(self, obj):
+        obj.hflip()
+        return obj
+
+class VFlip(ToTransform):
+    """ Vertical Flip.
+    """
+    def __init__(self):        
+        """Initialization 
+        """
+        pass
+
+    def __call_(self, obj):
+        obj.vflip()
+        return obj
+
+class Rotate90(ToTransform):
+    """ Rotate 90.
+    """
+    def __init__(self):        
+        """Initialization 
+        """
+        pass
+
+    def __call_(self, obj):
+        obj.Rotate90()
+        return obj
+    
+class Rotate180(ToTransform):
+    """ Rotate 180 .
+    """
+    def __init__(self):        
+        """Initialization 
+        """
+        pass
+
+    def __call_(self, obj):
+        obj.Rotate180()
+        return obj
+
+class Rotate270(ToTransform):
+    """ Rotate 270 .
+    """
+    def __init__(self):        
+        """Initialization 
+        """
+        pass
+
+    def __call_(self, obj):
+        obj.Rotate270()
+        return obj
+
+class RandomGeometricalTranform(ToTransform):
+    """ Random Geometrical Tranform
+    """
+
+    def __init__(self, angle=360, translation=0.2, warp=0.0 ):        
+        """Initialization 
+        Args:
+            @angle: ratate angle
+            @translate 
+            @warp
+        """
+        self.angle = angle
+        self.translation = translation
+        self.warp = warp
+
+    def __call__(self, obj):
+        
+        imsize = obj.size()[:2]
+        for _ in range(10):       
+            mat_r, mat_t, mat_w = F.get_geometric_random_transform( imsize, self.angle, self.translation, self.warp )
+            if obj.applay_geometrical_transform( mat_r, mat_t, mat_w ):
+                return obj
+        return obj
+
+
+
+class RandomElasticDistort(ToTransform):
+    """ Random Elastic Distort
+    """
+
+    def __init__(self, size_grid=50, deform=15  ):        
+        """Initialization 
+        Args:
+            @size_grid: ratate angle
+            @deform 
+        """
+        self.size_grid = size_grid
+        self.deform = deform
+
+    def __call__(self, obj):
+        
+        imsize = obj.size()[:2]
+        mapx, mapy = F.get_elastic_transform(imsize, self.size_grid, self.deform )
+        obj.applay_elastic_transform( mapx, mapy )
+
+        return obj
+        

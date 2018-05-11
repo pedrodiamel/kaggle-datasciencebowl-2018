@@ -21,15 +21,18 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(450,450),
+        imsize=(450,550),
         sigma=0.01,
         transform=transforms.Compose([
-              #mtrans.ToLinealMotionBlur(prob=0.8),
-              #mtrans.ToGaussianBlur(prob=1.0),
+              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur(), prob=0.8 ),
+              mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
               #mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
               #mtrans.CenterCrop( (200,200) ),
               #mtrans.RandomCrop( (150,120), limit=50 ),
-              mtrans.RandomScale(sxy=0.2, prob=1.0),
+              mtrans.RandomScale(factor=0.2 ),
+              #mtrans.HFlip(prob=0.5),
+              #mtrans.RandomGeometricalTranform( angle=360, translation=0.2, warp=0.02),
+              mtrans.RandomElasticDistort(),
               mtrans.ToTensor(),
             ])
         )

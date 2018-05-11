@@ -41,191 +41,6 @@ from . import utility as utl
 
 
 
-class ShiftScale(object):
-    
-    def __init__(self, limit=4, prob=.25):
-        self.limit = limit
-        self.prob = prob
-
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        limit = self.limit
-        if random.random() < self.prob:
-            
-            height, width, channel = image.shape            
-
-            size0x = width
-            size1x = width + 2*limit
-            sizex = round(random.uniform(size0x, size1x))
-
-            size0y = height
-            size1y = height + 2*limit
-            sizey = round(random.uniform(size0y, size1y))
-
-            dx = round(random.uniform(0, size1x-sizex))
-            dy = round(random.uniform(0, size1y-sizey))
-
-
-            y1 = dy; y2 = y1 + sizey
-            x1 = dx; x2 = x1 + sizex
-
-            box = [ x1, x2, y1, y2 ]
-
-
-            image_t  = scale(image,  x1, y1, x2, y2,  dx, dy, size0x, size0y, sizex, sizey, limit, cv2.INTER_LINEAR )
-            label_t  = scale(label,  x1, y1, x2, y2,  dx, dy, size0x, size0y, sizex, sizey, limit, cv2.INTER_NEAREST )
-            weight_t = scale(weight, x1, y1, x2, y2,  dx, dy, size0x, size0y, sizex, sizey, limit, cv2.INTER_LINEAR )
-
-            area = label[:,:,1].sum()
-            area_t = label_t[:,:,1].sum()
-            if area_t/area > 0.50 and area_t > 50: #5x5x2 
-                image  = image_t
-                label  = label_t
-                weight = weight_t        
-            
-
-        return {'image': image, 'label': label, 'weight': weight}
-
-
-class RandomFlip(object):
-    
-    def __init__(self, prob=0.5 ): 
-        self.prob = prob
-
-    def __call__(self, sample):            
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        if random.random() < self.prob:    
-
-            if random.random() < 0.5: 
-                image, label, weight = [ cv2.flip(x,-1) for x in [image, label, weight] ]
-            
-            if random.random() < 0.5: 
-                image, label, weight = [ cv2.flip(x, 1) for x in [image, label, weight] ]
-
-            if random.random() < 0.5: 
-                image, label, weight = [ cv2.flip(x, 0) for x in [image, label, weight] ]
-       
-            # op = random.randint(1,7)
-            # if op==1: #rotate90
-            #     image, label, weight = [ cv2.flip(x.transpose(1,0,2),1) for x in [image, label, weight] ]
-            # if op==2: #rotate180 
-            #     image, label, weight = [ cv2.flip(x,-1) for x in [image, label, weight] ]
-            # if op==3: #rotate270
-            #     image, label, weight = [ cv2.flip(x.transpose(1,0,2),0) for x in [image, label, weight] ]
-            # if op==4: #flip left-right
-            #     image, label, weight = [ cv2.flip(x,1) for x in [image, label, weight] ]
-            # if op==5: #flip up-down
-            #     image, label, weight = [ cv2.flip(x,0) for x in [image, label, weight] ]
-            # if op==6:
-            #     image, label, weight = [ cv2.flip(cv2.flip(x,1).transpose(1,0,2),1) for x in [image, label, weight] ]
-            # if op==7:
-            #     image, label, weight = [ cv2.flip(cv2.flip(x,0).transpose(1,0,2),1) for x in [image, label, weight] ]
-
-            image  = cunsqueeze(image)
-            label  = cunsqueeze(label)
-            weight  = cunsqueeze(weight)
-
-        return {'image': image, 'label': label, 'weight': weight}
-
-
-class RandomHFlip(object):
-    
-    def __init__(self, prob=0.5 ): 
-        self.prob = prob
-
-    def __call__(self, sample):            
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        if random.random() < self.prob:    
-            image, label, weight = [ cv2.flip(x,1) for x in [image, label, weight] ]
-            image  = cunsqueeze(image)
-            label  = cunsqueeze(label)
-            weight  = cunsqueeze(weight)
-        return {'image': image, 'label': label, 'weight': weight}
-
-class RandomVFlip(object):
-    
-    def __init__(self, prob=0.5 ): 
-        self.prob = prob
-
-    def __call__(self, sample):            
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        if random.random() < self.prob:    
-            image, label, weight = [ cv2.flip(x,0) for x in [image, label, weight] ]
-            image  = cunsqueeze(image)
-            label  = cunsqueeze(label)
-            weight  = cunsqueeze(weight)
-        return {'image': image, 'label': label, 'weight': weight}
-
-class GeometricDistort(object):
-    '''
-    Geometric transformation 
-    '''
-
-    def __init__(self, angle=360, translation=0.2, warp=0.0, prob=0.5 ): 
-        self.angle = angle
-        self.translation = translation
-        self.warp = warp
-        self.prob = prob
-
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-
-        if random.random() < self.prob:
-
-            bfliplr = random.random() < 0.5
-            bflipud = random.random() < 0.5
-
-            # apply tranform
-            rotation_mat, translation_mat, warp_mat  = geometric_transform( 
-                image.shape, 
-                self.angle,
-                self.translation,
-                self.warp,
-                )
-
-            height, width = image.shape[:2]
-
-            #borderMode=cv2.BORDER_REFLECT_101
-            #flags=cv2.INTER_LINEAR
-
-            image_t = image
-            image_t = cv2.warpAffine(image_t, rotation_mat, (width, height), flags=cv2.INTER_LINEAR )
-            image_t = cv2.warpAffine(image_t, translation_mat, (width, height), flags=cv2.INTER_LINEAR )
-            #image_t = cv2.warpAffine(image_t, warp_mat, (width, height) )
-            
-            if bfliplr: image_t = cv2.flip(image_t,0)
-            if bflipud: image_t = cv2.flip(image_t,1)
-        
-            label_t  = label
-            label_t  = cv2.warpAffine(label_t, rotation_mat, (width, height), flags=cv2.INTER_NEAREST )
-            label_t  = cv2.warpAffine(label_t, translation_mat, (width, height), flags=cv2.INTER_NEAREST )
-            #label_t = cv2.warpAffine(label_t, warp_mat, (width, height))
-            if bfliplr: label_t = cv2.flip(label_t,0)
-            if bflipud: label_t = cv2.flip(label_t,1)
-
-            weight_t = weight
-            weight_t = cv2.warpAffine(weight_t, rotation_mat, (width, height), flags=cv2.INTER_LINEAR )
-            weight_t = cv2.warpAffine(weight_t, translation_mat, (width, height), flags=cv2.INTER_LINEAR ) 
-            #weight_t = cv2.warpAffine(weight_t, warp_mat, (width, height))
-            if bfliplr: weight_t = cv2.flip(weight_t,0)
-            if bflipud: weight_t = cv2.flip(weight_t,1)
-
-            area = label[:,:,1].sum()
-            area_t = label_t[:,:,1].sum()
-            if area_t/area > 0.75 and area_t > 50: #5x5x2 
-                image  = cunsqueeze(image_t)
-                label  = cunsqueeze(label_t)
-                weight = cunsqueeze(weight_t)
-
-        return {'image': image, 'label': label, 'weight': weight}
-
-
 
 class ElasticDistort(object):
     '''
@@ -252,6 +67,10 @@ class ElasticDistort(object):
             weight = cv2.remap(weight, mapx, mapy, cv2.INTER_CUBIC)
         
         return {'image': image, 'label': label, 'weight': weight }
+
+
+
+
 
 class ElasticTorchDistort(object):
     '''
@@ -409,6 +228,8 @@ class ColorPermutation(object):
             random.shuffle(indexs)
             img = img[:,:, indexs ]
         return img
+
+
 
 
 

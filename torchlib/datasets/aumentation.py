@@ -100,7 +100,31 @@ class ObjectTransform(object):
     def scale( self, sxy, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.scale( self.image, sxy, cv2.INTER_LINEAR, padding_mode )
 
+    def hflip(self):
+        self.image = F.hflip( self.image )
 
+    def vflip(self):
+        self.image = F.vflip( self.image )
+
+    def rotate90(self):
+        self.image = F.rotate90( self.image )
+
+    def rotate180(self):
+        self.image = F.rotate180( self.image )
+
+    def rotate279(self):
+        self.image = F.rotate270( self.image )
+
+
+    def applay_geometrical_transform(self, mat_r, mat_t, mat_w ):        
+        self.image = F.applay_geometrical_transform( self.image, mat_r, mat_t, mat_w, cv2.INTER_LINEAR )
+        return True
+
+    def applay_elastic_transform(self, mapx, mapy):        
+        self.image  = self._draw_grid( self.image, grid_size=50 )
+        self.image  = cv2.remap(self.image,  mapx, mapy, cv2.INTER_CUBIC)
+        
+        
     # resize unet input
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
@@ -109,6 +133,20 @@ class ObjectTransform(object):
     #pytorch transform
     def to_tensor(self):
         pass
+
+
+    # Aux function to draw a grid
+    def _draw_grid(self, imgrid, grid_size=50, color=(255,0,0), thickness=1):
+        
+        m,n = imgrid.shape[:2]
+
+        # Draw grid lines
+        for i in range(0, n-1, grid_size):
+            cv2.line(imgrid, (i+grid_size, 0), (i+grid_size, m), color=color, thickness=thickness)
+        for j in range(0, m-1, grid_size):
+            cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
+
+        return imgrid
 
 
 
