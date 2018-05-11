@@ -47,15 +47,28 @@ def relabel( mask ):
         mask[i, j] = relabel_dict[mask[i, j]]
     return mask
 
-def scale(image, x1, y1, x2, y2, dx, dy, size0x, size0y, sizex, sizey, limit, mode ): 
-    
-    y1 = dy; y2 = y1 + sizey
-    x1 = dx; x2 = x1 + sizex
-    image_pad = cv2.copyMakeBorder(image, limit, limit, limit, limit, borderType=cv2.BORDER_CONSTANT,value=[0,0,0])
-    image_pad = cunsqueeze(image_pad)
-    image_t = cv2.resize(image_pad[y1:y2, x1:x2, :], (size0x, size0y), interpolation=mode)
-    image_t = cunsqueeze(image_t)     
-    return image_t
+
+def scale(image, sxy, mode, padding_mode ): 
+
+    h,w = image.shape[:2]
+    image = cv2.resize(image, None, fx=sxy, fy=sxy, interpolation=mode ) 
+    image = cunsqueeze(image)
+    hn, wn = image.shape[:2]
+
+    borderX = float( abs(wn-w) )/2.0
+    borderY = float( abs(hn-h) )/2.0
+    padxL = int(np.floor( borderY ))
+    padxR = int(np.ceil(  borderY )) 
+    padyT = int(np.floor( borderX ))
+    padyB = int(np.ceil(  borderX ))
+
+    if sxy < 1:  
+        image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
+    else:
+        image = image[ padyT:h, padxL:w, : ]
+
+    image = cunsqueeze(image)    
+    return image
 
 
 def is_box_inside(img, box ):
@@ -100,9 +113,6 @@ def imcrop( image, box ):
     imagecrop = cunsqueeze(imagecrop)
 
     return imagecrop
-
-
-
 
 
 def unsharp(image, size=9, strength=0.25, alpha=5 ):

@@ -282,3 +282,29 @@ class RandomCrop(object):
         return self.__class__.__name__
 
 
+class RandomScale(ToTransform):
+    """ Random Scale.
+    """
+    def __init__(self, prob=0.5, sxy=0.1, 
+        padding_mode=cv2.BORDER_CONSTANT,  
+        ):        
+        """Initialization
+        Args:
+            @prob: probability
+            @sxy: scale
+            @padding_mode        
+        """
+        super(RandomScale,self).__init__(prob)
+        self.sxy = sxy
+        self.padding_mode = padding_mode
+
+    def _execute(self, obj):
+        
+        height, width = obj.size()[:2]
+        sxy = self.sxy
+        #sxy = sxy * (0.5+random.random())
+        sxy = 0.5
+        #print(sxy)
+
+        obj.scale( sxy, self.padding_mode )
+        return obj

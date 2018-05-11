@@ -40,43 +40,6 @@ from . import utility as utl
 
 
 
-class RandomCrop(object):
-    '''
-    Random Crop
-    '''
-
-    def __init__(self, cropsize=(250,250) ): 
-        self.cropsize = cropsize
-        self.centercrop = CenterCrop(cropsize[0],cropsize[1])
-    
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-        cropsize = self.cropsize
-
-        h,w = image.shape[:2]
-        new_h, new_w = cropsize
-
-        area = 0
-        for i in range(10):            
-
-            top  = random.randint( 0, h - new_h )
-            left = random.randint( 0, w - new_w )
-
-            image_t  = utl.imagecrop(  image, cropsize, top, left)
-            label_t  = utl.imagecrop(  label, cropsize, top, left)
-            weight_t = utl.imagecrop( weight, cropsize, top, left)
-
-            area = label_t[:,:,1].sum()
-            if area > 0:
-                return { 'image': image_t, 'label': label_t, 'weight': weight_t }
-                
-        return self.centercrop(sample)
-
-
-
-
-
 
 class ShiftScale(object):
     
@@ -92,7 +55,6 @@ class ShiftScale(object):
         if random.random() < self.prob:
             
             height, width, channel = image.shape            
-            #assert(width == height)
 
             size0x = width
             size1x = width + 2*limit
@@ -105,10 +67,12 @@ class ShiftScale(object):
             dx = round(random.uniform(0, size1x-sizex))
             dy = round(random.uniform(0, size1y-sizey))
 
-            y1 = dy
-            y2 = y1 + sizey
-            x1 = dx
-            x2 = x1 + sizex
+
+            y1 = dy; y2 = y1 + sizey
+            x1 = dx; x2 = x1 + sizex
+
+            box = [ x1, x2, y1, y2 ]
+
 
             image_t  = scale(image,  x1, y1, x2, y2,  dx, dy, size0x, size0y, sizex, sizey, limit, cv2.INTER_LINEAR )
             label_t  = scale(label,  x1, y1, x2, y2,  dx, dy, size0x, size0y, sizex, sizey, limit, cv2.INTER_NEAREST )

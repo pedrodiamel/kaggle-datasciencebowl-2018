@@ -90,17 +90,20 @@ class ObjectTransform(object):
 
 
     #geometric transforms
+
     def crop( self, box):
         """Crop: return if validate crop
         """
         self.image = F.imcrop( self.image, box )
         return True
 
+    def scale( self, sxy, padding_mode = cv2.BORDER_CONSTANT ):
+        self.image = F.scale( self.image, sxy, cv2.INTER_LINEAR, padding_mode )
+
 
     # resize unet input
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
-
 
 
     #pytorch transform
