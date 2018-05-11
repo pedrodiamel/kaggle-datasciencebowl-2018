@@ -45,7 +45,8 @@ class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, obj):
-        return obj.to_tensor()
+        obj.to_tensor()
+        return obj
 
 
 class ToLinealMotionBlur(ToTransform):
@@ -348,7 +349,7 @@ class RandomGeometricalTranform(ToTransform):
     """ Random Geometrical Tranform
     """
 
-    def __init__(self, angle=360, translation=0.2, warp=0.0 ):        
+    def __init__(self, angle=360, translation=0.2, warp=0.0, padding_mode=cv2.BORDER_CONSTANT ):        
         """Initialization 
         Args:
             @angle: ratate angle
@@ -358,13 +359,14 @@ class RandomGeometricalTranform(ToTransform):
         self.angle = angle
         self.translation = translation
         self.warp = warp
+        self.padding_mode = padding_mode
 
     def __call__(self, obj):
         
         imsize = obj.size()[:2]
         for _ in range(10):       
             mat_r, mat_t, mat_w = F.get_geometric_random_transform( imsize, self.angle, self.translation, self.warp )
-            if obj.applay_geometrical_transform( mat_r, mat_t, mat_w ):
+            if obj.applay_geometrical_transform( mat_r, mat_t, mat_w, self.padding_mode ):
                 return obj
         return obj
 
@@ -374,7 +376,28 @@ class RandomElasticDistort(ToTransform):
     """ Random Elastic Distort
     """
 
-    def __init__(self, size_grid=50, deform=15  ):        
+    def __init__(self, size_grid=50, deform=15, padding_mode=cv2.BORDER_CONSTANT  ):        
+        """Initialization 
+        Args:
+            @size_grid: ratate angle
+            @deform 
+        """
+        self.size_grid = size_grid
+        self.deform = deform
+        self.padding_mode = padding_mode
+
+    def __call__(self, obj):
+        
+        imsize = obj.size()[:2]
+        mapx, mapy = F.get_elastic_transform(imsize, self.size_grid, self.deform )
+        obj.applay_elastic_transform( mapx, mapy, self.padding_mode )
+        return obj
+        
+class RandomElasticTensorDistort(object):
+    """ Random Elastic Tensor Distort
+    """
+
+    def __init__(self, size_grid=50, deform=15  ):    
         """Initialization 
         Args:
             @size_grid: ratate angle
@@ -383,11 +406,10 @@ class RandomElasticDistort(ToTransform):
         self.size_grid = size_grid
         self.deform = deform
 
-    def __call__(self, obj):
-        
-        imsize = obj.size()[:2]
-        mapx, mapy = F.get_elastic_transform(imsize, self.size_grid, self.deform )
-        obj.applay_elastic_transform( mapx, mapy )
+    def __call__(self, obj):        
+        imsize = obj.size()
+        width, height = imsize[2], imsize[1]
 
+        grid = F.get_tensor_elastic_transform( (height, width), self.size_grid, self.deform )
+        obj.applay_elastic_tensor_transform( grid ) 
         return obj
-        

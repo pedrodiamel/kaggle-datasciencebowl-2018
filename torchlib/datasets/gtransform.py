@@ -42,37 +42,7 @@ from . import utility as utl
 
 
 
-class ElasticDistort(object):
-    '''
-    Elastic transformation 
-    '''
-
-    def __init__(self, size_grid=50, deform=15, prob=0.5): 
-        self.size_grid = size_grid
-        self.deform = deform
-        self.prob = prob
-
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-        
-        if random.random() < self.prob:
-
-            # get transform
-            mapx, mapy = elastic_transform(image.shape, self.size_grid, self.deform )
-
-            # apply tranform
-            image  = cv2.remap(image,  mapx, mapy, cv2.INTER_CUBIC)
-            label  = cv2.remap(label,  mapx, mapy, cv2.INTER_NEAREST)
-            weight = cv2.remap(weight, mapx, mapy, cv2.INTER_CUBIC)
-        
-        return {'image': image, 'label': label, 'weight': weight }
-
-
-
-
-
-class ElasticTorchDistort(object):
+class ElasticTensorDistort(object):
     '''
     Elastic transformation with torch 
     '''
@@ -94,14 +64,13 @@ class ElasticTorchDistort(object):
 
             # apply tranform
             image_t  = grid_sample(torch.unsqueeze(image,dim=0), grid).data[0,...]
-            label_t  = grid_sample(torch.unsqueeze(label.float(),dim=0) , grid).round().data[0,...]
+            label_t  = grid_sample(torch.unsqueeze(label.float(),dim=0), grid).round().data[0,...]
             weight_t = grid_sample(torch.unsqueeze(weight,dim=0), grid).data[0,...]
 
             if label_t[1,...].sum() > 0:
                 image = image_t;
                 label = label_t;
                 weight = weight_t;
-
                     
         return {'image': image, 'label': label, 'weight': weight}
 

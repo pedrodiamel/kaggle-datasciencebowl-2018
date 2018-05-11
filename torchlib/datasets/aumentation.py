@@ -3,6 +3,9 @@ import torch
 import numpy as np
 import cv2
 
+from .grid_sample import grid_sample
+from .tps_grid_gen import TPSGridGen
+
 from . import utility as utl
 from . import functional as F
 
@@ -115,23 +118,31 @@ class ObjectTransform(object):
     def rotate279(self):
         self.image = F.rotate270( self.image )
 
-
-    def applay_geometrical_transform(self, mat_r, mat_t, mat_w ):        
-        self.image = F.applay_geometrical_transform( self.image, mat_r, mat_t, mat_w, cv2.INTER_LINEAR )
+    def applay_geometrical_transform(self, mat_r, mat_t, mat_w, padding_mode = cv2.BORDER_CONSTANT ):        
+        self.image = F.applay_geometrical_transform( self.image, mat_r, mat_t, mat_w, cv2.INTER_LINEAR, padding_mode )
         return True
 
-    def applay_elastic_transform(self, mapx, mapy):        
+    def applay_elastic_transform(self, mapx, mapy, padding_mode = cv2.BORDER_CONSTANT):        
         self.image  = self._draw_grid( self.image, grid_size=50 )
-        self.image  = cv2.remap(self.image,  mapx, mapy, cv2.INTER_CUBIC)
-        
-        
+        self.image  = cv2.remap(self.image,  mapx, mapy, cv2.INTER_LINEAR, borderMode=padding_mode)
+
+
+    def applay_elastic_tensor_transform(self, grid):
+        tensor = torch.unsqueeze( self.image, dim=0 )
+        self.image = grid_sample(tensor, grid ).data[0,...]  
+        print(self.image.shape)
+
     # resize unet input
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
 
 
-    #pytorch transform
+    #tensor transform
     def to_tensor(self):
+        pass
+
+    #interface of output
+    def to_output(self):
         pass
 
 
@@ -139,13 +150,11 @@ class ObjectTransform(object):
     def _draw_grid(self, imgrid, grid_size=50, color=(255,0,0), thickness=1):
         
         m,n = imgrid.shape[:2]
-
         # Draw grid lines
         for i in range(0, n-1, grid_size):
             cv2.line(imgrid, (i+grid_size, 0), (i+grid_size, m), color=color, thickness=thickness)
         for j in range(0, m-1, grid_size):
             cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
-
         return imgrid
 
 
@@ -162,6 +171,7 @@ class ObjectImageTransform(ObjectTransform):
 
     #pytorch transform
     def to_tensor(self):
+
         image  = self.image
         label  = self.label
 
@@ -169,8 +179,24 @@ class ObjectImageTransform(ObjectTransform):
         # numpy image: H x W x C
         # torch image: C X H X W
         image = image.transpose((2, 0, 1))
-        return {'image':  torch.from_numpy(image).float() ,
-                'labels': torch.from_numpy(label).float() }
+        image = torch.from_numpy(image).float()
+        label = torch.from_numpy(label).float()
+
+        self.image = image
+        self.label = label
+
+
+    ##interface of output
+    def to_output(self):
+        image  = self.image
+        label  = self.label
+        return { 
+            'image': image, 
+            'label': label 
+             }
+
+
+        
 
 
 class ObjectImageAndMaskTransform(ObjectTransform):
@@ -186,16 +212,18 @@ class ObjectImageAndMaskTransform(ObjectTransform):
     
     #pytorch transform
     def to_tensor(self):
+        
         image  = self.image
-        mask  = (self.mask>0).astype(np.uint8)
+        mask   = self.mask
+        mask = (mask>0).astype( np.uint8 )
 
         # numpy image: H x W x C
         # torch image: C X H X W        
         image  = image.transpose((2, 0, 1)).astype(np.float)
-        mask   = label.transpose((2, 0, 1)).astype(np.float)
+        mask   = mask.transpose((2, 0, 1)).astype(np.float)
+        self.image = torch.from_numpy(image).float()
+        self.mask  = torch.from_numpy(mask).float()
 
-        return {'image':  torch.from_numpy(image).float() ,
-                'labels': torch.from_numpy(mask).float() }
 
     #geometric transformation
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
@@ -203,6 +231,14 @@ class ObjectImageAndMaskTransform(ObjectTransform):
         self.mask  = F.resize_unet_transform(self.mask , fov_size, cv2.INTER_NEAREST, padding_mode)
 
 
+    ##interface of output
+    def to_output(self):
+        image  = self.image
+        mask   = self.mask
+        return { 
+            'image': image, 
+            'label': mask 
+             }
         
 
 
@@ -222,21 +258,35 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
     def to_tensor(self):
         
         image  = self.image
-        mask   = (self.mask>0).astype(np.uint8)
+        mask   = self.mask
         weight = self.weight
+        mask = (mask>0).astype( np.uint8 )
 
         # numpy image: H x W x C
         # torch image: C X H X W        
         image  = image.transpose((2, 0, 1)).astype(np.float)
-        mask  = mask.transpose((2, 0, 1)).astype(np.float)
+        mask   = mask.transpose((2, 0, 1)).astype(np.float)
         weight = weight.transpose((2, 0, 1)).astype(np.float)
 
-        return {'image': torch.from_numpy(image).float(),
-                'label': torch.from_numpy(mask).float(),
-                'weight': torch.from_numpy(weight).float(),
-               }
+        self.image  = torch.from_numpy(image).float()
+        self.mask   = torch.from_numpy(mask).float()
+        self.weight = torch.from_numpy(weight).float()
+
 
     #geometric transformation
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         super(ObjectImageMaskAndWeightTransform, self).to_unet_input(fov_size, padding_mode)
         self.weight = F.resize_unet_transform(self.weight, fov_size, cv2.INTER_LINEAR,  padding_mode)
+
+
+    ##interface of output
+    def to_output(self):
+        image  = self.image
+        mask   = self.mask
+        weight = self.weight
+
+        return { 
+            'image': image, 
+            'label': mask,
+            'weight': weight,
+             }

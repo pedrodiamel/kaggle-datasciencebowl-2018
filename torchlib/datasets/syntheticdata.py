@@ -176,6 +176,5 @@ class SynteticCircleDataset(Dataset):
         if self.transform: 
             sample = self.transform( obj )
 
-        return obj.to_tensor()
-
+        return obj.to_output()
 

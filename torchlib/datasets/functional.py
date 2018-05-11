@@ -22,6 +22,11 @@ from scipy import ndimage
 import scipy.misc
 import skfmm
 
+import torch
+from torch.autograd import Variable
+
+import itertools
+from .tps_grid_gen import TPSGridGen
 
 
 
@@ -231,7 +236,7 @@ def get_elastic_transform(shape, size_grid, deform):
 
 
 
-def torch_elastic_transform(shape, size_grid, deform):
+def get_tensor_elastic_transform(shape, size_grid, deform):
     """Get elastic tranform for tensor
     Args:
         @shape: image shape
@@ -246,6 +251,7 @@ def torch_elastic_transform(shape, size_grid, deform):
 
     source_control_points = target_control_points + torch.Tensor(target_control_points.size()).uniform_(-deform, deform)
     tps = TPSGridGen(target_height, target_width, target_control_points)
+
     source_coordinate = tps(Variable(torch.unsqueeze(source_control_points, 0)))
     grid = source_coordinate.view(1, target_height, target_width, 2)
     
@@ -293,11 +299,11 @@ def get_geometric_random_transform( imsize, degree, translation, warp ):
     return rotation_mat, translation_mat, warp_mat 
 
 
-def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode  ):
+def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode, padding_mode  ):
     h,w = image.shape[:2] 
-    image = cv2.warpAffine(image, mat_r, (w,h), flags=interpolate_mode )
-    image = cv2.warpAffine(image, mat_t, (w,h), flags=interpolate_mode )
-    image = cv2.warpAffine(image, mat_w, (w,h), flags=interpolate_mode )
+    image = cv2.warpAffine(image, mat_r, (w,h), flags=interpolate_mode, borderMode=padding_mode )
+    image = cv2.warpAffine(image, mat_t, (w,h), flags=interpolate_mode, borderMode=padding_mode )
+    image = cv2.warpAffine(image, mat_w, (w,h), flags=interpolate_mode, borderMode=padding_mode )
     image = cunsqueeze(image)
     return image
 
