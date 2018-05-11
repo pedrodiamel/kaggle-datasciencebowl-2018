@@ -52,20 +52,21 @@ def scale(image, sxy, mode, padding_mode ):
 
     h,w = image.shape[:2]
     image = cv2.resize(image, None, fx=sxy, fy=sxy, interpolation=mode ) 
+
     image = cunsqueeze(image)
     hn, wn = image.shape[:2]
 
     borderX = float( abs(wn-w) )/2.0
     borderY = float( abs(hn-h) )/2.0
     padxL = int(np.floor( borderY ))
-    padxR = int(np.ceil(  borderY )) 
+    padxR = int(np.ceil(  borderY ))  
     padyT = int(np.floor( borderX ))
     padyB = int(np.ceil(  borderX ))
 
     if sxy < 1:  
         image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
     else:
-        image = image[ padyT:h, padxL:w, : ]
+        image = image[ padyT:padyT+h, padxL:padxL+w, : ]
 
     image = cunsqueeze(image)    
     return image

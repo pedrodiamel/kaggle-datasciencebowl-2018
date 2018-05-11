@@ -301,10 +301,6 @@ class RandomScale(ToTransform):
     def _execute(self, obj):
         
         height, width = obj.size()[:2]
-        sxy = self.sxy
-        #sxy = sxy * (0.5+random.random())
-        sxy = 0.5
-        #print(sxy)
-
+        sxy =  1.0 + self.sxy*random.uniform(-1.0, 1.0)
         obj.scale( sxy, self.padding_mode )
         return obj
