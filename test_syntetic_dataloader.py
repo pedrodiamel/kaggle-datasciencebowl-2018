@@ -42,6 +42,11 @@ data = SynteticCircleDataset(
               #mtrans.RandomElasticDistort( padding_mode=cv2.BORDER_REFLECT101 ),
               mtrans.ToTensor(),
               #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
+              #mtrans.ToNormalization(),
+              mtrans.ToMeanNormalization(
+                  mean=[0.485, 0.456, 0.406],
+                  std=[0.229, 0.224, 0.225]
+                  ),
             ])
         )
 
@@ -72,7 +77,7 @@ for i_batch, sample_batched in enumerate(dataloader):
         
     plt.figure( figsize=(15,15) )
     plt.subplot(131)
-    plt.imshow( image_a.permute(1,2,0).squeeze()/255  ) #, cmap='gray' 
+    plt.imshow( image_a.permute(1,2,0).squeeze()  ) #, cmap='gray' 
     plt.axis('off')
     plt.ioff()
 

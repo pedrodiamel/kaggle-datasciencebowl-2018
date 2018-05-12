@@ -309,17 +309,17 @@ class ToMeanNormalization(ToTransform):
     """To mean normalization 
     """
 
-    def __init__(self, mu, std):
+    def __init__(self, mean, std):
         """Initialization
         Args:
-            @mu: mean
+            @mean: mean
             @std: estandar desviation
         """
-        self.mu = mu 
+        self.mean = mean 
         self.std = std
 
     def __call__(self, obj):
-        obj.mean_normalization(self.mu, self.std)
+        obj.mean_normalization(self.mean, self.std)
         return obj
 
 class ToWhiteNormalization(ToTransform):
