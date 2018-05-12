@@ -342,7 +342,6 @@ class ColorCheckerRender(object):
             cv2.fillPoly(mask, [bbox], 1)   
             
         return im, mask;
-
  
 class Render(object):
     
@@ -354,7 +353,6 @@ class Render(object):
         if len(centers)==0: return False
         d = np.sum((centers-c)**2, axis=1)**0.5;
         return np.any( (d < (r+radios) ) ) 
-        
 
     @staticmethod
     def to_rgb(img):
@@ -383,7 +381,6 @@ class Render(object):
         noisy = img + noise     
         noisy = (np.clip(noisy,0,1)*255).astype(np.uint8)
         return noisy
-
 
 class CircleRender(Render):
     
@@ -448,7 +445,6 @@ class CircleRender(Render):
         } 
 
         return images, labels, metadata
-
 
 class EllipseRender(Render):
     

@@ -27,8 +27,8 @@ from torch.autograd import Variable
 
 import itertools
 
-from .grid_sample import grid_sample
-from .tps_grid_gen import TPSGridGen
+from .grid.grid_sample import grid_sample
+from .grid.tps_grid_gen import TPSGridGen
 
 
 def cunsqueeze(data):
@@ -85,7 +85,6 @@ def rotate180( x ):
 def rotate270( x ):
     return cv2.flip(x.transpose(1,0,2),0)
 
-
 def is_box_inside(img, box ):
     return box[0] < 0 or box[1] < 0 or box[2]+box[0] >= img.shape[1] or box[3]+box[1] >= img.shape[0]
 
@@ -113,7 +112,6 @@ def pad_img_to_fit_bbox(img, box):
 
     return img, [ x1, y1, x2-x1, y2-y1 ]
 
-
 def imcrop( image, box ):
     """ Image crop
     Args
@@ -129,7 +127,6 @@ def imcrop( image, box ):
 
     return imagecrop
 
-
 def unsharp(image, size=9, strength=0.25, alpha=5 ):
     
     image = image.astype(np.float32)
@@ -140,7 +137,6 @@ def unsharp(image, size=9, strength=0.25, alpha=5 ):
     image = np.clip(image, 0, 255).astype(np.uint8)
     
     return image
-
 
 def gaussian_noise(image, sigma=0.5):
     
@@ -159,7 +155,6 @@ def gaussian_noise(image, sigma=0.5):
 
     return image
 
-
 def speckle_noise(image, sigma=0.5):
     lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
     gray, a, b = cv2.split(lab)
@@ -174,7 +169,6 @@ def speckle_noise(image, sigma=0.5):
     lab   = cv2.merge((noisy, a, b))
     image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     return image
-
 
 def inv_speckle_noise(image, sigma=0.5):
     lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
@@ -192,9 +186,6 @@ def inv_speckle_noise(image, sigma=0.5):
     image = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     return image
 
-
-
-# ELASTIC TRANSFORMATION
 def get_elastic_transform(shape, size_grid, deform):
     """Get elastic tranform 
     Args:
@@ -232,8 +223,6 @@ def get_elastic_transform(shape, size_grid, deform):
 
     return map_x_32, map_y_32
 
-
-
 def get_tensor_elastic_transform( shape, size_grid, deform):
     """Get elastic tranform for tensor
     Args:
@@ -255,9 +244,6 @@ def get_tensor_elastic_transform( shape, size_grid, deform):
     
     return grid
 
-
-
-# GEOMETRICAL TRANSFORM
 def get_geometric_random_transform( imsize, degree, translation, warp ):
     """Transform the image for data augmentation
     Args:
@@ -296,7 +282,6 @@ def get_geometric_random_transform( imsize, degree, translation, warp ):
 
     return rotation_mat, translation_mat, warp_mat 
 
-
 def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode, padding_mode  ):
     h,w = image.shape[:2] 
     image = cv2.warpAffine(image, mat_r, (w,h), flags=interpolate_mode, borderMode=padding_mode )
@@ -304,7 +289,6 @@ def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode, 
     image = cv2.warpAffine(image, mat_w, (w,h), flags=interpolate_mode, borderMode=padding_mode )
     image = cunsqueeze(image)
     return image
-
 
 def square_resize(image, newsize, interpolate_mode, padding_mode):
     
@@ -328,7 +312,17 @@ def square_resize(image, newsize, interpolate_mode, padding_mode):
 
 
 
-# UNET RESIZE
+def draw_grid(imgrid, grid_size=50, color=(255,0,0), thickness=1):
+    
+    m,n = imgrid.shape[:2]
+    # Draw grid lines
+    for i in range(0, n-1, grid_size):
+        cv2.line(imgrid, (i+grid_size, 0), (i+grid_size, m), color=color, thickness=thickness)
+    for j in range(0, m-1, grid_size):
+        cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
+    return imgrid
+
+
 def resize_unet_transform(image, size, interpolate_mode, padding_mode): 
     
     height, width, ch = image.shape
@@ -369,12 +363,6 @@ def resize_unet_transform(image, size, interpolate_mode, padding_mode):
     image = cunsqueeze(image)
 
     return image
-
-
-
-
-
-
 
 def image_to_array(image, channels=None):
     """
@@ -447,8 +435,6 @@ def image_to_array(image, channels=None):
         raise ValueError('resize_image() expected a PIL.Image.Image or a numpy.ndarray')
 
     return image
-
-
 
 def resize_image(image, height, width,
                  channels=None,

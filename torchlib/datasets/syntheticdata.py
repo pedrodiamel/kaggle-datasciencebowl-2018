@@ -132,6 +132,7 @@ class SynteticCircleDataset(Dataset):
         border=90,
         sigma=0.2,
         btouch=True,
+        bdraw_grid=False,
         transform=None,
         ):
         """           
@@ -147,6 +148,7 @@ class SynteticCircleDataset(Dataset):
         self.sigma = sigma
         self.btouch = btouch
         self.transform = transform 
+        self.bdraw_grid = bdraw_grid
     
 
     def __len__(self):
@@ -174,7 +176,9 @@ class SynteticCircleDataset(Dataset):
         weight_t = weight[:,:,np.newaxis] 
 
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
-        #obj.image  = obj._draw_grid( obj.image, grid_size=50 )
+
+        if bdraw_grid:
+            obj._draw_grid( grid_size=50 )
 
         if self.transform: 
             sample = self.transform( obj )

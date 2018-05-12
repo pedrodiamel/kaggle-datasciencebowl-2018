@@ -3,8 +3,8 @@ import torch
 import numpy as np
 import cv2
 
-from .grid_sample import grid_sample
-from .tps_grid_gen import TPSGridGen
+from .grid.grid_sample import grid_sample
+from .grid.tps_grid_gen import TPSGridGen
 
 from . import utility as utl
 from . import functional as F
@@ -147,8 +147,6 @@ class ObjectTransform(object):
         img_yuv[:, :, 0] = clahe.apply(img_yuv[:, :, 0])
         self.image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
-
-
     ### mean normalization
     def mean_normalization(self,mean, std):
         tensor = self.image
@@ -225,16 +223,10 @@ class ObjectTransform(object):
         pass
 
 
-    # Aux function to draw a grid
-    def _draw_grid(self, imgrid, grid_size=50, color=(255,0,0), thickness=1):
-        
-        m,n = imgrid.shape[:2]
-        # Draw grid lines
-        for i in range(0, n-1, grid_size):
-            cv2.line(imgrid, (i+grid_size, 0), (i+grid_size, m), color=color, thickness=thickness)
-        for j in range(0, m-1, grid_size):
-            cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
-        return imgrid
+    # Aux function to draw a grid for debug
+    def _draw_grid(self, grid_size=50, color=(255,0,0), thickness=1):
+        self.image = F.draw_grid(grid_size, color, thickness)        
+
 
 
 

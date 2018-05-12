@@ -43,15 +43,13 @@ def to_channels( image, ch ):
         assert(False)
     return image
 
-def summary(image):
-    print(image.shape, image.min(), image.max())
-
+def summary(data):
+    print(data.shape, data.min(), data.max())
 
 def ffftshift2(h):    
     H = np.fft.fft2(h)
     H = np.abs( np.fft.fftshift( H ) )
     return H
-
 
 def to_one_hot( x, nc ):
     y = np.zeros((nc)); y[x] = 1.0
