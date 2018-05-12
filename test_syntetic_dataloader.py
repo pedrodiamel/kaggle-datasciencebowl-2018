@@ -21,10 +21,19 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(250,250),
+        imsize=(512,512),
         sigma=0.01,
         bdraw_grid=True,
         transform=transforms.Compose([
+
+              ## resize and crop
+                           
+              #mtrans.CenterCrop( (200,200) ),
+              mtrans.RandomCrop( (250,250), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
+              mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT_101),
+              
+              ## color 
+
               #mtrans.RandomSaturation(),
               #mtrans.RandomHueSaturationShift(),
               #mtrans.RandomHueSaturation(),
@@ -32,23 +41,36 @@ data = SynteticCircleDataset(
               #mtrans.ToNegative(),
               #mtrans.RandomRGBPermutation(),
               #mtrans.ToGrayscale(),
-              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.8 ),
+
+              ## blur
+
+              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.5 ),
+              #mtrans.ToRandomTransform( mtrans.ToMotionBlur( ), prob=0.5 ),
               #mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
-              #mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT101),
-              #mtrans.CenterCrop( (200,200) ),
-              mtrans.RandomCrop( (150,120), limit=50 ),
+              
+              ## geometrical 
+
+              #mtrans.ToRandomTransform( mtrans.HFlip(), prob=0.5 )
+              #mtrans.ToRandomTransform( mtrans.VFlip(), prob=0.5 )
               #mtrans.RandomScale(factor=0.2, padding_mode=cv2.BORDER_REFLECT101 ),
-              #mtrans.HFlip(prob=0.5),
               #mtrans.RandomGeometricalTranform( angle=360, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT101),
               #mtrans.RandomElasticDistort( size_grid=50, padding_mode=cv2.BORDER_REFLECT101 ),
+              
+              ## tensor 
+              
               mtrans.ToTensor(),
-              mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
-              #mtrans.ToWhiteNormalization(),
+              #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
+              
+              # normalization
+
               mtrans.ToNormalization(),
+              #mtrans.ToWhiteNormalization(),
               #mtrans.ToMeanNormalization(
               #    mean=[0.485, 0.456, 0.406],
               #    std=[0.229, 0.224, 0.225]
               #    ),
+
+
             ])
         )
 

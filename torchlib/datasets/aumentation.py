@@ -173,10 +173,10 @@ class ObjectTransform(object):
 
     #Geometric transforms
 
-    def crop( self, box):
+    def crop( self, box, padding_mode ):
         """Crop: return if validate crop
         """
-        self.image = F.imcrop( self.image, box )
+        self.image = F.imcrop( self.image, box, padding_mode )
         return True
 
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):
@@ -283,11 +283,11 @@ class ObjectImageAndMaskTransform(ObjectTransform):
 
    #Geometric transforms
 
-    def crop( self, box):
+    def crop( self, box, padding_mode):
         """Crop: return if validate crop
         """
-        self.image = F.imcrop( self.image, box )
-        self.mask = F.imcrop( self.mask, box )
+        self.image = F.imcrop( self.image, box, padding_mode )
+        self.mask = F.imcrop( self.mask, box, padding_mode )
         return True
 
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):
@@ -395,12 +395,12 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
 
     #Geometric transformation
 
-    def crop( self, box):
+    def crop( self, box, padding_mode):
         """Crop: return if validate crop
         """
-        self.image = F.imcrop( self.image, box )
-        self.mask = F.imcrop( self.mask, box )
-        self.weight = F.imcrop( self.weight, box )
+        self.image = F.imcrop( self.image, box, padding_mode )
+        self.mask = F.imcrop( self.mask, box, padding_mode )
+        self.weight = F.imcrop( self.weight, box, padding_mode )
         return True
 
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):

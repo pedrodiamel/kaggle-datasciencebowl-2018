@@ -88,7 +88,7 @@ def rotate270( x ):
 def is_box_inside(img, box ):
     return box[0] < 0 or box[1] < 0 or box[2]+box[0] >= img.shape[1] or box[3]+box[1] >= img.shape[0]
 
-def pad_img_to_fit_bbox(img, box):
+def pad_img_to_fit_bbox(img, box, padding_mode):
     
     x1,y1,x2,y2 = box
     x2 = x1+x2; y2 = y1+y2
@@ -97,7 +97,7 @@ def pad_img_to_fit_bbox(img, box):
     padxR = np.maximum(y2 - img.shape[0], 0)
     padyT = (np.abs(np.minimum(0, x1)))
     padyB = np.maximum(x2 - img.shape[1], 0)
-    img = cv2.copyMakeBorder(img, padxL, padxR, padyT, padyB, borderType=cv2.BORDER_CONSTANT )
+    img = cv2.copyMakeBorder(img, padxL, padxR, padyT, padyB, borderType=padding_mode )
     
     # img = np.pad(
     #     img, ((np.abs(np.minimum(0, y1)), np.maximum(y2 - img.shape[0], 0)),
@@ -112,7 +112,7 @@ def pad_img_to_fit_bbox(img, box):
 
     return img, [ x1, y1, x2-x1, y2-y1 ]
 
-def imcrop( image, box ):
+def imcrop( image, box, padding_mode ):
     """ Image crop
     Args
         @image
@@ -120,7 +120,7 @@ def imcrop( image, box ):
     """    
     h, w, c = image.shape
     if is_box_inside(image, box):
-        image, box = pad_img_to_fit_bbox(image, box)    
+        image, box = pad_img_to_fit_bbox(image, box, padding_mode)    
     x, y, new_w, new_h = box
     imagecrop = image[y:y + new_h, x:x + new_w, : ]   
     imagecrop = cunsqueeze(imagecrop)

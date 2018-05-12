@@ -369,18 +369,19 @@ class CenterCrop(ToTransform):
     """Center Crop
     """
     
-    def __init__(self, cropsize ):
+    def __init__(self, cropsize, padding_mode=cv2.BORDER_CONSTANT ):
         """Initialization
         Args:
             @cropsize [w,h]
         """
         self.cropsize = cropsize
+        self.padding_mode = padding_mode
         
     def __call__(self, obj):
         h, w = obj.size()[:2]
         x = (w - self.cropsize[0]) // 2
         y = (h - self.cropsize[1]) // 2
-        obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] )
+        obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ], self.padding_mode )
         return obj
     
 
@@ -388,7 +389,7 @@ class RandomCrop(ToTransform):
     """Random Crop
     """
     
-    def __init__(self, cropsize, limit=10 ):
+    def __init__(self, cropsize, limit=10, padding_mode=cv2.BORDER_CONSTANT ):
         """Initialization
         Args:
             @cropsize [w,h]
@@ -396,7 +397,8 @@ class RandomCrop(ToTransform):
         """
         self.cropsize = cropsize
         self.limit = limit
-        self.centecrop = CenterCrop(cropsize)
+        self.padding_mode = padding_mode
+        self.centecrop = CenterCrop(cropsize, padding_mode)
         
     def __call__(self, obj):
         h, w = obj.size()[:2]
@@ -409,7 +411,7 @@ class RandomCrop(ToTransform):
             x = random.randint( -self.limit, (w - newW) + self.limit )
             y = random.randint( -self.limit, (h - newH) + self.limit )
             box = [ x, y, self.cropsize[0], self.cropsize[1] ]
-            if obj.crop( box ):
+            if obj.crop( box, self.padding_mode ):
                 return obj
 
         return self.centecrop(obj)
