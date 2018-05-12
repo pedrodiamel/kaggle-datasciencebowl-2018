@@ -400,7 +400,7 @@ class RandomCrop(ToTransform):
         
     def __call__(self, obj):
         h, w = obj.size()[:2]
-        newW,newH = self.cropsize
+        newW, newH = self.cropsize
 
         assert(w - newW + self.limit > 0)
         assert(h - newH + self.limit > 0)
@@ -408,7 +408,8 @@ class RandomCrop(ToTransform):
         for _ in range(10):       
             x = random.randint( -self.limit, (w - newW) + self.limit )
             y = random.randint( -self.limit, (h - newH) + self.limit )
-            if obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ] ):
+            box = [ x, y, self.cropsize[0], self.cropsize[1] ]
+            if obj.crop( box ):
                 return obj
 
         return self.centecrop(obj)

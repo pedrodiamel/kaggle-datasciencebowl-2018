@@ -51,10 +51,10 @@ def relabel( mask ):
         mask[i, j] = relabel_dict[mask[i, j]]
     return mask
 
-def scale(image, sxy, mode, padding_mode ): 
+def scale(image, factor, mode, padding_mode ): 
 
     h,w = image.shape[:2]
-    image = cv2.resize(image, None, fx=sxy, fy=sxy, interpolation=mode ) 
+    image = cv2.resize(image, None, fx=factor, fy=factor, interpolation=mode ) 
     image = cunsqueeze(image)
     hn, wn = image.shape[:2]
     borderX = float( abs(wn-w) )/2.0
