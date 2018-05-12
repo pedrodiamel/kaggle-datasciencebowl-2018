@@ -225,7 +225,7 @@ class ObjectTransform(object):
 
     # Aux function to draw a grid for debug
     def _draw_grid(self, grid_size=50, color=(255,0,0), thickness=1):
-        self.image = F.draw_grid(grid_size, color, thickness)        
+        self.image = F.draw_grid(self.image, grid_size, color, thickness)        
 
 
 

@@ -177,7 +177,7 @@ class SynteticCircleDataset(Dataset):
 
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
 
-        if bdraw_grid:
+        if self.bdraw_grid:
             obj._draw_grid( grid_size=50 )
 
         if self.transform: 
