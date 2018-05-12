@@ -44,81 +44,12 @@ from . import utility as utl
 ## color ====================================================================================
 
 
-class RandomSaturation:
-    def __init__(self, limit=0.3, prob=0.5):
-        self.limit = limit
-        self.prob = prob
-    def __call__(self, img):
-        # dont work :(
-        if random.random() < self.prob:
-            
-            alpha = 1.0 + random.uniform(-self.limit, self.limit)
-            maxval = np.max(img[..., :3])
-            dtype = img.dtype
-            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB).astype( np.float32 )
-            img[..., :3] = alpha * img[..., :3].astype( np.float32 ) + (1.0 - alpha) * gray
-            img[..., :3] = clip(img[..., :3], dtype, maxval)
-
-        return img
-
-
-class Grayscale(object):    
-    def __init__(self, prob=.5):
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob:
-            grayimage = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            img = cv2.cvtColor(grayimage, cv2.COLOR_GRAY2RGB)
-        return img
-
 
 # https://github.com/chainer/chainercv/blob/master/chainercv/links/model/ssd/transforms.py
 # https://github.com/fchollet/keras/pull/4806/files
 # https://zhuanlan.zhihu.com/p/24425116
 # http://lamda.nju.edu.cn/weixs/project/CNNTricks/CNNTricks.html
-
-class RandomHueSaturationShift(object):
-    
-    def __init__(self, limit=0.3, prob=0.5):
-        self.limit = limit
-        self.prob = prob
-
-    def __call__(self, image):
-        
-        if random.random() < self.prob:
-            
-            alpha = 1.0 + random.uniform(-self.limit, self.limit)
-            h   = int(alpha*180)
-            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-            hsv[:, :, 0] = (hsv[:, :, 0].astype(int) + h) % 170
-            image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-
-        return image       
-    
-
-
-class RandomHueSaturationValue(object):
-        
-    def __init__(self, hue_shift_limit=(-5, 5), sat_shift_limit=(-11, 11), val_shift_limit=(-11, 11), prob=0.5):
-        self.hue_shift_limit = hue_shift_limit
-        self.sat_shift_limit = sat_shift_limit
-        self.val_shift_limit = val_shift_limit
-        self.prob = prob
-
-    def __call__(self, image):
-        if random.random() < self.prob:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-            h, s, v = cv2.split(image)
-            hue_shift = random.uniform(self.hue_shift_limit[0], self.hue_shift_limit[1])
-            h = cv2.add(h, hue_shift)
-            sat_shift = random.uniform(self.sat_shift_limit[0], self.sat_shift_limit[1])
-            s = cv2.add(s, sat_shift)
-            val_shift = random.uniform(self.val_shift_limit[0], self.val_shift_limit[1])
-            v = cv2.add(v, val_shift)
-            image = cv2.merge((h, s, v))
-            image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
-        return image
+  
 
 
 # https://www.kaggle.com/c/data-science-bowl-2018/discussion/53940

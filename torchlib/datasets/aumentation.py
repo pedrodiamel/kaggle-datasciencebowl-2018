@@ -54,7 +54,7 @@ class ObjectTransform(object):
         img = self.image
         maxval = np.max(img[..., :3])
         dtype = img.dtype
-        img[..., :3] = utl.clip(alpha * img[...,:3].astype(np.float32), dtype, maxval)
+        img[..., :3] = F.clip(alpha * img[...,:3].astype(np.float32), dtype, maxval)
         self.image = img
 
     ### brightness shift
@@ -62,7 +62,7 @@ class ObjectTransform(object):
         img = self.image
         maxval = np.max(img[..., :3])
         dtype = img.dtype
-        img[..., :3] = clip(alpha * 255 + img[...,:3].astype(np.float32), dtype, maxval)
+        img[..., :3] = F.clip(alpha * 255 + img[...,:3].astype(np.float32), dtype, maxval)
         self.image = img
 
     ### contrast
@@ -72,8 +72,41 @@ class ObjectTransform(object):
         gray = (3.0 * (1.0 - alpha) / gray.size) * np.sum(gray)
         maxval = np.max(img[..., :3])
         dtype = img.dtype
-        img[:, :, :3] = clip(alpha * img[:, :, :3].astype(np.float32) + gray, dtype, maxval)
-        self.image = img      
+        img[:, :, :3] = F.clip(alpha * img[:, :, :3].astype(np.float32) + gray, dtype, maxval)
+        self.image = img    
+
+    ### saturation
+    #REVIEW!!!!
+    def saturation(self, alpha):
+        img = self.image
+        maxval = np.max(img[..., :3])
+        dtype = img.dtype
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB).astype( np.float32 )
+        img[..., :3] = alpha * img[..., :3].astype( np.float32 ) + (1.0 - alpha) * gray
+        img[..., :3] = F.clip(img[..., :3], dtype, maxval)  
+        self.image = img
+
+    ### hue saturation shift
+    def hue_saturation_shift(self, alpha):
+        image = self.image
+        h   = int(alpha*180)
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        hsv[:, :, 0] = (hsv[:, :, 0].astype(int) + h) % 170
+        image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+        self.image = image
+
+    ### hue saturation
+    def hue_saturation(self, hue_shift, sat_shift, val_shift):
+        image = self.image
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        h, s, v = cv2.split(image)
+        h = cv2.add(h, hue_shift)
+        s = cv2.add(s, sat_shift)
+        v = cv2.add(v, val_shift)
+        image = cv2.merge((h, s, v))
+        image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+        self.image = image
 
     ### gamma correction
     def gamma_correction(self, gamma):   
@@ -82,6 +115,12 @@ class ObjectTransform(object):
                 for i in np.arange(0, 256)]).astype("uint8")
         image = cv2.LUT(image, table) # apply gamma correction using the lookup table  
         self.image = image
+
+    ### to gray
+    def to_gray(self):
+        grayimage = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        self.image = cv2.cvtColor(grayimage, cv2.COLOR_GRAY2RGB)
+
 
     ### histogram ecualization
     def clahe(self, clipLimit, tileGridSize):

@@ -24,9 +24,13 @@ data = SynteticCircleDataset(
         imsize=(388,388),
         sigma=0.01,
         transform=transforms.Compose([
-              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur(), prob=0.8 ),
+              #mtrans.RandomSaturation(),
+              #mtrans.RandomHueSaturationShift(),
+              mtrans.RandomHueSaturation(),
+              #mtrans.ToGrayscale(),
+              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.8 ),
               #mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
-              #mtrans.ToResizeUNetFoV(388, cv2.BORDER_CONSTANT),
+              #mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT101),
               #mtrans.CenterCrop( (200,200) ),
               #mtrans.RandomCrop( (150,120), limit=50 ),
               #mtrans.RandomScale(factor=0.2, padding_mode=cv2.BORDER_REFLECT101 ),
@@ -34,7 +38,7 @@ data = SynteticCircleDataset(
               #mtrans.RandomGeometricalTranform( angle=360, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT101),
               #mtrans.RandomElasticDistort( padding_mode=cv2.BORDER_REFLECT101 ),
               mtrans.ToTensor(),
-              mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
+              #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
             ])
         )
 

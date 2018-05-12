@@ -43,7 +43,6 @@ def to_channels( image, ch ):
         assert(False)
     return image
 
-
 def summary(image):
     print(image.shape, image.min(), image.max())
 

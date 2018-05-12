@@ -174,7 +174,7 @@ class SynteticCircleDataset(Dataset):
         weight_t = weight[:,:,np.newaxis] 
 
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
-        obj.image  = obj._draw_grid( obj.image, grid_size=50 )
+        #obj.image  = obj._draw_grid( obj.image, grid_size=50 )
 
         if self.transform: 
             sample = self.transform( obj )

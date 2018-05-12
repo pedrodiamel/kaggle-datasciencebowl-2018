@@ -155,13 +155,66 @@ class RandomContrast(ToTransform):
         Args:
             @factor: factor
         """
-        super(RandomContrast,self).__init__(prob)
-        self.limit = limit
+        self.factor = factor
 
     def __call__(self, obj):
         alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness_shift(alpha)
         return obj
+
+class RandomSaturation(ToTransform):
+    """Random Saturation.
+    """
+    def __init__(self, factor=0.1 ):        
+        """Initialization
+        Args:
+            @factor: factor
+        """
+        self.factor = factor
+
+    def __call__(self, obj):
+        alpha = 1.0 + self.factor*random.uniform(-1, 1)
+        obj.saturation(alpha)
+        return obj
+
+
+class RandomHueSaturationShift(ToTransform):
+    """Random Hue Saturation Shift.
+    """
+    def __init__(self, factor=0.3 ):        
+        """Initialization
+        Args:
+            @factor: factor
+        """
+        self.factor = factor
+
+    def __call__(self, obj):
+        alpha = 1.0 + random.uniform(-self.factor, self.factor)
+        obj.hue_saturation_shift(alpha)
+        return obj
+
+
+class RandomHueSaturation(ToTransform):
+    """Random Hue Saturation.
+    """
+    def __init__(self, hue_shift_limit=(-5, 5), sat_shift_limit=(-11, 11), val_shift_limit=(-11, 11)):        
+        """Initialization
+        Args:
+            @hue_shift_limit: hue_shift_limit
+            @sat_shift_limit: sat_shift_limit
+            @val_shift_limit: val_shift_limit
+        """
+        self.hue_shift_limit = hue_shift_limit
+        self.sat_shift_limit = sat_shift_limit
+        self.val_shift_limit = val_shift_limit
+
+    def __call__(self, obj):        
+        hue_shift = random.uniform(self.hue_shift_limit[0], self.hue_shift_limit[1])
+        sat_shift = random.uniform(self.sat_shift_limit[0], self.sat_shift_limit[1])
+        val_shift = random.uniform(self.val_shift_limit[0], self.val_shift_limit[1])
+        obj.hue_saturation(hue_shift, sat_shift, val_shift)
+        return obj
+
 
 class RandomGamma(ToTransform):
     """Random Gamma.
@@ -176,6 +229,19 @@ class RandomGamma(ToTransform):
     def __call__(self, obj):
         alpha = 1.0 + self.factor*random.uniform(-1, 1)
         obj.brightness_shift(alpha)
+        return obj
+
+class ToGrayscale(ToTransform):
+    """To gray image
+    """
+
+    def __init__(self):
+        """Initialization
+        """
+        pass
+
+    def __call__(self, obj):
+        obj.to_gray()
         return obj
 
 

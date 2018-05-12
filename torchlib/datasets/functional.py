@@ -31,10 +31,6 @@ from .grid_sample import grid_sample
 from .tps_grid_gen import TPSGridGen
 
 
-
-
-
-
 def cunsqueeze(data):
     if len( data.shape ) == 2: 
         data = data[:,:,np.newaxis]
