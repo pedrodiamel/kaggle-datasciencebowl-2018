@@ -108,6 +108,16 @@ class ObjectTransform(object):
         image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
         self.image = image
 
+    ### rgb shift
+    def rgbshift(self, r_shift, g_shift, b_shift):
+        image = self.image        
+        r,g,b = cv2.split(image)
+        r = cv2.add(r, r_shift)
+        g = cv2.add(g, g_shift)
+        b = cv2.add(b, b_shift)
+        image = cv2.merge((r, g, b))
+        self.image = image
+
     ### gamma correction
     def gamma_correction(self, gamma):   
         image = self.image

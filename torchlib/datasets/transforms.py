@@ -215,6 +215,27 @@ class RandomHueSaturation(ToTransform):
         obj.hue_saturation(hue_shift, sat_shift, val_shift)
         return obj
 
+class RandomRGBShift(ToTransform):
+    """Random RGB Shift.
+    """
+    def __init__(self, r_shift_limit=(-128, 128), g_shift_limit=(-128, 128), b_shift_limit=(-128, 128)):        
+        """Initialization
+        Args:
+            @r_shift_limit: r_shift_limit
+            @g_shift_limit: g_shift_limit
+            @b_shift_limit: b_shift_limit
+        """
+        self.r_shift_limit = r_shift_limit
+        self.g_shift_limit = g_shift_limit
+        self.b_shift_limit = b_shift_limit
+
+    def __call__(self, obj):        
+        r_shift = random.uniform(self.r_shift_limit[0], self.r_shift_limit[1])
+        g_shift = random.uniform(self.g_shift_limit[0], self.g_shift_limit[1])
+        b_shift = random.uniform(self.b_shift_limit[0], self.b_shift_limit[1])
+        obj.rgbshift(r_shift, g_shift, b_shift)
+        return obj
+
 
 class RandomGamma(ToTransform):
     """Random Gamma.

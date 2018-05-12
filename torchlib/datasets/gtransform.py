@@ -42,9 +42,6 @@ from . import utility as utl
 
 
 ## color ====================================================================================
-
-
-
 # https://github.com/chainer/chainercv/blob/master/chainercv/links/model/ssd/transforms.py
 # https://github.com/fchollet/keras/pull/4806/files
 # https://zhuanlan.zhihu.com/p/24425116

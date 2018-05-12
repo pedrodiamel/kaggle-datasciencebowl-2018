@@ -26,7 +26,8 @@ data = SynteticCircleDataset(
         transform=transforms.Compose([
               #mtrans.RandomSaturation(),
               #mtrans.RandomHueSaturationShift(),
-              mtrans.RandomHueSaturation(),
+              #mtrans.RandomHueSaturation(),
+              mtrans.RandomRGBShift(),
               #mtrans.ToGrayscale(),
               #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.8 ),
               #mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
