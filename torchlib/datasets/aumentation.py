@@ -123,14 +123,12 @@ class ObjectTransform(object):
         return True
 
     def applay_elastic_transform(self, mapx, mapy, padding_mode = cv2.BORDER_CONSTANT):        
-        self.image  = self._draw_grid( self.image, grid_size=50 )
         self.image  = cv2.remap(self.image,  mapx, mapy, cv2.INTER_LINEAR, borderMode=padding_mode)
 
 
     def applay_elastic_tensor_transform(self, grid):
         tensor = torch.unsqueeze( self.image, dim=0 )
         self.image = grid_sample(tensor, grid ).data[0,...]  
-        print(self.image.shape)
 
     # resize unet input
     def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):

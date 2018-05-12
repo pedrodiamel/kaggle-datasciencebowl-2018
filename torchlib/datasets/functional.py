@@ -246,6 +246,7 @@ def get_tensor_elastic_transform( shape, size_grid, deform):
         @deform: deform coeficient
     """   
     target_height, target_width = shape[:2]
+
     target_control_points = torch.Tensor( list(itertools.product(
         torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
         torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
@@ -253,7 +254,6 @@ def get_tensor_elastic_transform( shape, size_grid, deform):
 
     source_control_points = target_control_points + torch.Tensor(target_control_points.size()).uniform_(-deform, deform)
     tps = TPSGridGen(target_height, target_width, target_control_points)
-
     source_coordinate = tps(Variable(torch.unsqueeze(source_control_points, 0)))
     grid = source_coordinate.view(1, target_height, target_width, 2)
     

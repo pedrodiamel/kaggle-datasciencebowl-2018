@@ -157,7 +157,8 @@ class SynteticCircleDataset(Dataset):
         image, masks, meta = self.ren.generate( 
             self.imsize[0], self.imsize[1], self.cnt, self.rmin, 
             self.rmax, self.border, self.sigma, 
-            self.btouch)
+            self.btouch
+            )
 
         mask = masks.max(0)
         #weight = wmap.getweightmap( mask )     
@@ -173,6 +174,8 @@ class SynteticCircleDataset(Dataset):
         weight_t = weight[:,:,np.newaxis] 
 
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
+        obj.image  = obj._draw_grid( obj.image, grid_size=50 )
+
         if self.transform: 
             sample = self.transform( obj )
 

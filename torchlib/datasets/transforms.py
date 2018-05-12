@@ -396,7 +396,7 @@ class RandomElasticTensorDistort(object):
     """ Random Elastic Tensor Distort
     """
 
-    def __init__(self, size_grid=50, deform=15  ):    
+    def __init__(self, size_grid=10, deform=0.05  ):    
         """Initialization 
         Args:
             @size_grid: ratate angle
@@ -406,7 +406,7 @@ class RandomElasticTensorDistort(object):
         self.deform = deform
 
     def __call__(self, obj):        
-        width, height = obj.image.size(1), obj.image.size(2)   
-        grid = F.get_tensor_elastic_transform( (height, width) , self.size_grid, self.deform )
+        width, height = obj.image.size(1), obj.image.size(2)           
+        grid = F.get_tensor_elastic_transform( (height, width), self.size_grid, self.deform )
         obj.applay_elastic_tensor_transform( grid ) 
         return obj

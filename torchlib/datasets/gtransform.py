@@ -41,45 +41,6 @@ from . import utility as utl
 
 
 
-
-class ElasticTensorDistort(object):
-    '''
-    Elastic transformation with torch 
-    '''
-
-    def __init__(self, size_grid=50, deform=15, prob=0.5): 
-        self.size_grid = size_grid
-        self.deform = deform
-        self.prob = prob
-
-    def __call__(self, sample):
-        
-        image, label, weight = sample['image'], sample['label'], sample['weight']
-        width, height = image.size(1),image.size(2)   
-
-        if random.random() < self.prob:
-
-            # get transform
-            grid = torch_elastic_transform( (height, width) , self.size_grid, self.deform )
-
-            # apply tranform
-            image_t  = grid_sample(torch.unsqueeze(image,dim=0), grid).data[0,...]
-            label_t  = grid_sample(torch.unsqueeze(label.float(),dim=0), grid).round().data[0,...]
-            weight_t = grid_sample(torch.unsqueeze(weight,dim=0), grid).data[0,...]
-
-            if label_t[1,...].sum() > 0:
-                image = image_t;
-                label = label_t;
-                weight = weight_t;
-                    
-        return {'image': image, 'label': label, 'weight': weight}
-
-
-
-
-
-
-
 ## color ====================================================================================
 
 
