@@ -148,6 +148,31 @@ class ObjectTransform(object):
         self.image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
 
 
+
+    ### mean normalization
+    def mean_normalization(self,mean, std):
+        tensor = self.image
+        result_tensor = []
+        for t, m, s in zip(tensor, mean, std):
+            result_tensor.append(t.sub_(m).div_(s))
+        self.image = torch.stack(result_tensor, 0)
+
+    ### white normalization
+    def white_normalization(self):        
+        tensor = self.image
+        new_tensor = []
+        for t in tensor:
+            t = t.sub_( t.min() )
+            t = t.div_( t.max() )
+            new_tensor.append( t )        
+        self.image = torch.stack(new_tensor, 0)
+
+    ### normalization
+    def normalization(self):
+        self.image = self.image/255
+
+
+
     #geometric transforms
 
     def crop( self, box):

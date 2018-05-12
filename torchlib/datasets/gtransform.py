@@ -41,33 +41,6 @@ from . import utility as utl
 
 
 
-## color ====================================================================================
-# https://github.com/chainer/chainercv/blob/master/chainercv/links/model/ssd/transforms.py
-# https://github.com/fchollet/keras/pull/4806/files
-# https://zhuanlan.zhihu.com/p/24425116
-# http://lamda.nju.edu.cn/weixs/project/CNNTricks/CNNTricks.html
-  
-
-
-# https://www.kaggle.com/c/data-science-bowl-2018/discussion/53940
-
-
-
-class ColorPermutation(object):    
-    def __init__(self, prob=.5):
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob:
-            indexs = [0,1,2]
-            random.shuffle(indexs)
-            img = img[:,:, indexs ]
-        return img
-
-
-
-
-
-
 class ColorDistort(object):
     '''
     Color distortion

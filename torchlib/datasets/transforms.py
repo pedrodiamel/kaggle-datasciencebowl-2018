@@ -305,6 +305,45 @@ class CLAHE(ToTransform):
         return obj
 
 
+class ToMeanNormalization(ToTransform):
+    """To mean normalization 
+    """
+
+    def __init__(self, mu, std):
+        """Initialization
+        Args:
+            @mu: mean
+            @std: estandar desviation
+        """
+        self.mu = mu 
+        self.std = std
+
+    def __call__(self, obj):
+        obj.mean_normalization(self.mu, self.std)
+        return obj
+
+class ToWhiteNormalization(ToTransform):
+    """To white normalization 
+    """
+    def __init__(self ):
+        """Initialization
+        """
+        pass
+    def __call__(self, obj):
+        obj.white_normalization()
+        return obj
+
+class ToNormalization(ToTransform):
+    """To white normalization 
+    """
+    def __init__(self ):
+        """Initialization
+        """
+        pass
+    def __call__(self, obj):
+        obj.normalization()
+        return obj
+
 
 # geometrical transforms
 
