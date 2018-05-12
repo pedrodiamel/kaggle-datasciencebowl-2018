@@ -260,9 +260,32 @@ class ToGrayscale(ToTransform):
         """Initialization
         """
         pass
-
     def __call__(self, obj):
         obj.to_gray()
+        return obj
+
+class ToNegative(ToTransform):
+    """To negative 
+    """
+
+    def __init__(self):
+        """Initialization
+        """
+        pass
+    def __call__(self, obj):
+        obj.to_negative()
+        return obj
+
+class RandomRGBPermutation(ToTransform):
+    """RGB permutation 
+    """
+    def __init__(self):
+        """Initialization
+        """
+        self.indexs = [0,1,2]
+    def __call__(self, obj):
+        random.shuffle(self.indexs)
+        obj.rgbpermutation( self.indexs )
         return obj
 
 

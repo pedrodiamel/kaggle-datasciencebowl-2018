@@ -50,32 +50,8 @@ from . import utility as utl
 
 
 # https://www.kaggle.com/c/data-science-bowl-2018/discussion/53940
-class ColorShift(object):    
-    def __init__(self, r_shift_limit=(-128, 128), g_shift_limit=(-128, 128), b_shift_limit=(-128, 128), prob=0.5):
-        self.r_shift_limit = r_shift_limit
-        self.g_shift_limit = g_shift_limit
-        self.b_shift_limit = b_shift_limit
-        self.prob = prob
 
-    def __call__(self, image):
-        if random.random() < self.prob:
-            r,g,b = cv2.split(image)
-            r_shift = random.uniform(self.r_shift_limit[0], self.r_shift_limit[1])
-            r = cv2.add(r, r_shift)
-            g_shift = random.uniform(self.g_shift_limit[0], self.g_shift_limit[1])
-            g = cv2.add(g, g_shift)
-            b_shift = random.uniform(self.b_shift_limit[0], self.b_shift_limit[1])
-            b = cv2.add(b, b_shift)
-            image = cv2.merge((r, g, b))
-        return image
 
-class Negative(object):    
-    def __init__(self, prob=.5):
-        self.prob = prob
-    def __call__(self, img):
-        if random.random() < self.prob:
-            img = 255-img
-        return img
 
 class ColorPermutation(object):    
     def __init__(self, prob=.5):

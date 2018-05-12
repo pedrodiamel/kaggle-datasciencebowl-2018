@@ -131,6 +131,13 @@ class ObjectTransform(object):
         grayimage = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
         self.image = cv2.cvtColor(grayimage, cv2.COLOR_GRAY2RGB)
 
+    ### to negative
+    def to_negative(self):
+        self.image = 255 - self.image
+
+    ### rgb chanels permutation
+    def rgbpermutation(self, indexs):
+        self.image =  self.image[:,:, indexs ]
 
     ### histogram ecualization
     def clahe(self, clipLimit, tileGridSize):
