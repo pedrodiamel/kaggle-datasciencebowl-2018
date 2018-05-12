@@ -42,11 +42,12 @@ data = SynteticCircleDataset(
               #mtrans.RandomElasticDistort( padding_mode=cv2.BORDER_REFLECT101 ),
               mtrans.ToTensor(),
               #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
+              mtrans.ToWhiteNormalization(),
               #mtrans.ToNormalization(),
-              mtrans.ToMeanNormalization(
-                  mean=[0.485, 0.456, 0.406],
-                  std=[0.229, 0.224, 0.225]
-                  ),
+              #mtrans.ToMeanNormalization(
+              #    mean=[0.485, 0.456, 0.406],
+              #    std=[0.229, 0.224, 0.225]
+              #    ),
             ])
         )
 
