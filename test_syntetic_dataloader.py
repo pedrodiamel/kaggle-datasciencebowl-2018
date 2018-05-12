@@ -21,7 +21,7 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
-        imsize=(450,550),
+        imsize=(250,250),
         sigma=0.01,
         transform=transforms.Compose([
               #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur(), prob=0.8 ),
@@ -34,7 +34,7 @@ data = SynteticCircleDataset(
               #mtrans.RandomGeometricalTranform( angle=360, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT101),
               #mtrans.RandomElasticDistort( padding_mode=cv2.BORDER_REFLECT101 ),
               mtrans.ToTensor(),
-              mtrans.RandomElasticTensorDistort(),
+              mtrans.RandomElasticTensorDistort( size_grid=50, deform=15 ),
             ])
         )
 

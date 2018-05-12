@@ -26,6 +26,8 @@ import torch
 from torch.autograd import Variable
 
 import itertools
+
+from .grid_sample import grid_sample
 from .tps_grid_gen import TPSGridGen
 
 
@@ -236,7 +238,7 @@ def get_elastic_transform(shape, size_grid, deform):
 
 
 
-def get_tensor_elastic_transform(shape, size_grid, deform):
+def get_tensor_elastic_transform( shape, size_grid, deform):
     """Get elastic tranform for tensor
     Args:
         @shape: image shape
@@ -244,7 +246,7 @@ def get_tensor_elastic_transform(shape, size_grid, deform):
         @deform: deform coeficient
     """   
     target_height, target_width = shape[:2]
-    target_control_points = torch.Tensor(list(itertools.product(
+    target_control_points = torch.Tensor( list(itertools.product(
         torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
         torch.arange(-1.0, 1.00001, 2.0 / (size_grid-1)),
         )))

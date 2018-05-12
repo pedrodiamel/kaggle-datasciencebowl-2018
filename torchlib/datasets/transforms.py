@@ -386,8 +386,7 @@ class RandomElasticDistort(ToTransform):
         self.deform = deform
         self.padding_mode = padding_mode
 
-    def __call__(self, obj):
-        
+    def __call__(self, obj):        
         imsize = obj.size()[:2]
         mapx, mapy = F.get_elastic_transform(imsize, self.size_grid, self.deform )
         obj.applay_elastic_transform( mapx, mapy, self.padding_mode )
@@ -407,9 +406,7 @@ class RandomElasticTensorDistort(object):
         self.deform = deform
 
     def __call__(self, obj):        
-        imsize = obj.size()
-        width, height = imsize[2], imsize[1]
-
-        grid = F.get_tensor_elastic_transform( (height, width), self.size_grid, self.deform )
+        width, height = obj.image.size(1), obj.image.size(2)   
+        grid = F.get_tensor_elastic_transform( (height, width) , self.size_grid, self.deform )
         obj.applay_elastic_tensor_transform( grid ) 
         return obj
