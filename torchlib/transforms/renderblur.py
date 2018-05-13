@@ -2,17 +2,13 @@
 # Render
 # Implement the render function for blur problems
 
-
-import numpy as np
-import math
-from scipy.ndimage import rotate as imrotate
-from scipy.interpolate import interp1d
-
-import cv2
 import random
+import numpy as np
+import cv2
+from scipy.ndimage import rotate as imrotate
 import skimage
 
-from . import utility as utl
+from . import functional as F
 
 
 
@@ -110,7 +106,7 @@ class BlurRender(object):
         # blur 
         imblur = cv2.filter2D(image, -1, psf )            
         # noise
-        imnoise = utl.to_gaussian_noise(imblur, sigma=0.001)
+        imnoise = F.gaussian_noise(imblur, sigma=0.001)
                 
         # metric reference
         psnr =  self._psnr(image, imnoise);
@@ -322,7 +318,7 @@ class BlurRender(object):
         ISNR
         Improvement in Signal to Noise Ratio
         '''        
-        return 10.0 * np.log10( utl.norm_fro(original,noisy)/utl.norm_fro(original,restore))
+        return 10.0 * np.log10( F.norm_fro(original,noisy)/F.norm_fro(original,restore))
 
 
     def _psnr(self, original, restore):
@@ -332,12 +328,12 @@ class BlurRender(object):
 
         # c = 1;
         # if len(original.shape)==3: c=3;
-        # mse = utl.norm_fro(original, restore)/np.prod(original.shape) ;
+        # mse = F.norm_fro(original, restore)/np.prod(original.shape) ;
         # return 10.0 * np.log10( 255*255.0*c/ mse )
 
         #c = 1;
         #if len(original.shape)==3: c=3;
-        #mse = utl.norm_fro(original.astype('float'), restore.astype('float'))/np.prod(original.shape) ;
+        #mse = F.norm_fro(original.astype('float'), restore.astype('float'))/np.prod(original.shape) ;
         #if mse==0: return 200
         #pixel_max= (2 ** (8*c)) -1
         #return 20.0 * np.log10( pixel_max / np.sqrt(mse) )

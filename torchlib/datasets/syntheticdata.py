@@ -5,7 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
 import numpy as np
-import random as rnd
 from collections import namedtuple
 from skimage import io, transform
 from skimage import color
@@ -14,8 +13,8 @@ import cv2
 import warnings
 warnings.filterwarnings("ignore")
 
-from .render import ColorCheckerRender, CircleRender, EllipseRender
-from .aumentation import ObjectImageMaskAndWeightTransform
+from ..transforms.render import ColorCheckerRender, CircleRender, EllipseRender
+from ..transforms.aumentation import ObjectImageMaskAndWeightTransform
 
 from . import imageutl as imutl
 from . import weightmaps as wmap

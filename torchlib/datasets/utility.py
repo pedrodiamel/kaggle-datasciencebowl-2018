@@ -46,18 +46,8 @@ def to_channels( image, ch ):
 def summary(data):
     print(data.shape, data.min(), data.max())
 
-def ffftshift2(h):    
-    H = np.fft.fft2(h)
-    H = np.abs( np.fft.fftshift( H ) )
-    return H
 
 def to_one_hot( x, nc ):
     y = np.zeros((nc)); y[x] = 1.0
     return y
 
-def norm_fro(a,b): 
-    return np.sum( (a-b)**2.0 );
-
-def complex2vector(c):
-    '''complex to vector'''    
-    return np.concatenate( ( c.real, c.imag ) , axis=1 )

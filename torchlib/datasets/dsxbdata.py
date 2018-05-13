@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
 import numpy as np
-import random as rnd
 from collections import namedtuple
 from skimage import io, transform
 from skimage import color

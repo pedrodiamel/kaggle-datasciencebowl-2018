@@ -8,19 +8,11 @@ import PIL.Image
 import math
 import cv2
 import random
-import csv
-import h5py
 
-
-import skimage.morphology as morph
-from skimage import io, transform, morphology, filters
-import skimage.color as skcolor
-import skimage.util as skutl
 from scipy.interpolate import griddata
 
 from scipy import ndimage
 import scipy.misc
-import skfmm
 
 import torch
 from torch.autograd import Variable
@@ -363,6 +355,20 @@ def resize_unet_transform(image, size, interpolate_mode, padding_mode):
     image = cunsqueeze(image)
 
     return image
+
+
+def ffftshift2(h):    
+    H = np.fft.fft2(h)
+    H = np.abs( np.fft.fftshift( H ) )
+    return H
+
+def norm_fro(a,b): 
+    return np.sum( (a-b)**2.0 );
+
+def complex2vector(c):
+    '''complex to vector'''    
+    return np.concatenate( ( c.real, c.imag ) , axis=1 )
+
 
 def image_to_array(image, channels=None):
     """

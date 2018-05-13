@@ -6,7 +6,6 @@ import cv2
 from .grid.grid_sample import grid_sample
 from .grid.tps_grid_gen import TPSGridGen
 
-from . import utility as utl
 from . import functional as F
 
 class ObjectTransform(object):

@@ -12,10 +12,12 @@ import scipy.misc
 import cv2
 
 from torchlib.datasets.syntheticdata import SynteticCircleDataset
-from torchlib.datasets import transforms as mtrans
-
 from torchlib.datasets import imageutl as imutl
 from torchlib.datasets import utility as utl
+
+from torchlib.transforms import transforms as mtrans
+
+
 from torchlib import visualization as view
 
 
@@ -61,7 +63,7 @@ data = SynteticCircleDataset(
               mtrans.ToTensor(),
               #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
               
-              # normalization
+              ## normalization
 
               mtrans.ToNormalization(),
               #mtrans.ToWhiteNormalization(),

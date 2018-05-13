@@ -1,18 +1,16 @@
+
 import os
-import sys
 import numpy as np
 import PIL.Image
 import scipy.misc
 
 import cv2
-import skimage.color as skcolor
-import skimage.util as skutl
 import random
 import csv
 import pandas as pd
 import operator
 
-from torchlib.datasets import utility as utl
+from . import utility as utl
 
 
 trainfile='stage1_train'
