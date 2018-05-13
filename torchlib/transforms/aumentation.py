@@ -285,9 +285,16 @@ class ObjectImageAndMaskTransform(ObjectTransform):
     def crop( self, box, padding_mode):
         """Crop: return if validate crop
         """
-        self.image = F.imcrop( self.image, box, padding_mode )
-        self.mask = F.imcrop( self.mask, box, padding_mode )
-        return True
+
+        image = F.imcrop( self.image, box, padding_mode )
+        mask = F.imcrop( self.mask, box, padding_mode )
+
+        if mask.sum() > 10: #area>10
+             self.image = image
+             self.mask = mask 
+             return True   
+
+        return False
 
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.scale( self.image, factor, cv2.INTER_LINEAR, padding_mode )
@@ -397,10 +404,18 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
     def crop( self, box, padding_mode):
         """Crop: return if validate crop
         """
-        self.image = F.imcrop( self.image, box, padding_mode )
-        self.mask = F.imcrop( self.mask, box, padding_mode )
-        self.weight = F.imcrop( self.weight, box, padding_mode )
-        return True
+        image = F.imcrop( self.image, box, padding_mode )
+        mask = F.imcrop( self.mask, box, padding_mode )
+        weight = F.imcrop( self.weight, box, padding_mode )
+
+        if mask.sum() > 10: #area>10
+            self.image = image
+            self.mask = mask
+            self.weight = weight 
+            return True   
+
+        return False
+
 
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.scale( self.image, factor, cv2.INTER_LINEAR, padding_mode )

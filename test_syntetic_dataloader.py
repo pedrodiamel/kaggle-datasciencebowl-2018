@@ -16,8 +16,6 @@ from torchlib.datasets import imageutl as imutl
 from torchlib.datasets import utility as utl
 
 from torchlib.transforms import transforms as mtrans
-
-
 from torchlib import visualization as view
 
 
@@ -31,8 +29,8 @@ data = SynteticCircleDataset(
               ## resize and crop
                            
               #mtrans.CenterCrop( (200,200) ),
-              mtrans.RandomCrop( (250,250), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
-              mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT_101),
+              mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
+              mtrans.ToResizeUNetFoV(100, cv2.BORDER_REFLECT_101),
               
               ## color 
 
@@ -48,7 +46,7 @@ data = SynteticCircleDataset(
 
               #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.5 ),
               #mtrans.ToRandomTransform( mtrans.ToMotionBlur( ), prob=0.5 ),
-              #mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
+              mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
               
               ## geometrical 
 
