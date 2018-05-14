@@ -16,13 +16,12 @@ import torch.nn as nn
 import torch.nn.functional as nnfun
 
 
-import deep
-from deep import netmodels as nnmodels
-from deep import netlosses as nloss
-from deep import torchutl
-from deep import graphic as gph
-from deep import netutility as nutl
-from deep import netlearningrate
+from . import netmodels as nnmodels
+from . import netlosses as nloss
+from . import torchutl
+from . import graphic as gph
+from . import netutility as nutl
+from . import netlearningrate
 
 import cv2
 
