@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 import pandas as pd
 from skimage import io, transform
@@ -11,6 +12,7 @@ from skimage import color
 import scipy.misc
 import cv2
 
+sys.path.append('../')
 from torchlib.datasets.syntheticdata import SynteticCircleDataset
 from torchlib.neuralnet import SegmentationNeuralNet
 from torchlib.datasets import imageutl as imutl
