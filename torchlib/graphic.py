@@ -96,7 +96,7 @@ class ImageVisdom(object):
     
     def show(self, title, image):
         
-        image = cv2.resize(image, self.heatsize, interpolation = cv2.INTER_LINEAR)
+        image = cv2.resize(image, self.imsize, interpolation = cv2.INTER_LINEAR)
 
         if title not in self.images:
             self.images[title] = self.vis.image(

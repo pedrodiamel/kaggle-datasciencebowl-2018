@@ -208,8 +208,12 @@ class ObjectTransform(object):
         tensor = torch.unsqueeze( self.image, dim=0 )
         self.image = grid_sample(tensor, grid ).data[0,...]  
 
+    ### resize
+    def resize(self, imsize):
+        self.image = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
+
     ### resize unet input
-    def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
+    def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
 
     ### tensor transform
@@ -351,8 +355,13 @@ class ObjectImageAndMaskTransform(ObjectTransform):
         self.mask  = torch.from_numpy(mask).float()
 
 
+    ### resize
+    def resize(self, imsize):
+        self.image = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
+        self.mask = cv2.resize(self.mask, imsize , interpolation=cv2.INTER_NEAREST ) 
+
     #geometric transformation
-    def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
+    def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.resize_unet_transform(self.image, fov_size, cv2.INTER_LINEAR,  padding_mode)
         self.mask  = F.resize_unet_transform(self.mask , fov_size, cv2.INTER_NEAREST, padding_mode)
 
@@ -465,8 +474,14 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
         self.weight = grid_sample( torch.unsqueeze( self.weight, dim=0 ), grid ).data[0,...]
 
 
-    def to_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
-        super(ObjectImageMaskAndWeightTransform, self).to_unet_input(fov_size, padding_mode)
+    ### resize
+    def resize(self, imsize):
+        self.image  = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
+        self.mask   = cv2.resize(self.mask, imsize , interpolation=cv2.INTER_NEAREST ) 
+        self.weight = cv2.resize(self.weight, imsize , interpolation=cv2.INTER_NEAREST )
+
+    def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
+        super(ObjectImageMaskAndWeightTransform, self).resize_unet_input(fov_size, padding_mode)
         self.weight = F.resize_unet_transform(self.weight, fov_size, cv2.INTER_LINEAR,  padding_mode)
 
 

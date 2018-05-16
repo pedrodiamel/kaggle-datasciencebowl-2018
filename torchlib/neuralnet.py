@@ -1,11 +1,9 @@
 
+
 import os
+import math
 import shutil
 import time
-import numpy as np
-import math
-import scipy.misc
-from skimage import color
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -13,42 +11,43 @@ from torchvision import transforms, utils
 from torch.autograd import Variable
 import torchvision.models as models
 import torch.nn as nn
-import torch.nn.functional as nnfun
+import torch.nn.functional as F
 
+import numpy as np
+import time
+import scipy.misc
+from tqdm import tqdm
 
 from . import netmodels as nnmodels
-from . import netlosses as nloss
-from . import torchutl
-from . import graphic as gph
-from . import netutility as nutl
 from . import netlearningrate
+from . import netlosses as nloss
+from . import graphic as gph
+from .logger import Logger, AverageFilterMeter, AverageMeter
 
-import cv2
 
+#----------------------------------------------------------------------------------------------
+# Abstract Neural Net 
 
-
-class Network(object):
+class AbstractNeuralNet(object):
     """
-    Convolutional Net
-        -training
-        -val
-        -test
+    Abstract Convolutional Neural Net 
     """
 
     def __init__(self,
         patchproject,
         nameproject,
         no_cuda=True,
-        parallel = False,
+        parallel=False,
         seed=1,
         print_freq=10,
         gpu=0
         ):
         """
         Initialization
-            -patchproject (str)
-            -nameproject (str)
-            -no_cuda (bool) (default is True)
+            -patchproject (str): path project
+            -nameproject (str):  name project
+            -no_cuda (bool): system cuda (default is True)
+            -parallel (bool)
             -seed (int)
             -print_freq (int)
             -gpu (int)
@@ -58,7 +57,6 @@ class Network(object):
         self.cuda = not no_cuda and torch.cuda.is_available()
         self.parallel = not no_cuda and parallel
         torch.manual_seed(seed)
-
         if self.cuda:
             torch.cuda.set_device(gpu)
             torch.cuda.manual_seed(seed)
@@ -74,19 +72,18 @@ class Network(object):
 
         # Set the graphic visualization
         self.plotter = gph.VisdomLinePlotter(env_name=nameproject)
-        self.visheatmap = gph.HeatMapVisdom(env_name=nameproject)
-        self.visimshow = gph.ImageVisdom(env_name=nameproject)
 
         self.print_freq = print_freq
-
-        self.num_classes = 0
+        self.num_input_channels = 0
+        self.num_output_channels = 0
+        self.size_input = 0
         self.lr = 0.0001
-        self.start_epoch = 0
-        self.imsize = 0
+        self.start_epoch = 0        
 
-        self.arch = ''
-        self.opt = ''
-        self.lrsch = ''
+        self.s_arch = ''
+        self.s_optimizer = ''
+        self.s_lerning_rate_sch = ''
+        self.s_loss = ''
 
         self.net = None
         self.criterion = None
@@ -94,315 +91,137 @@ class Network(object):
         self.lrscheduler = None
         self.vallosses = None
 
-        self.accuracy = nloss.Accuracy()
-        self.dice = nloss.Dice()
-  
-    def create(self, arch, num_classes, loss, lr, momentum, opt, lrsch, pretrained=False ):
+    def create(self, 
+        arch, 
+        num_output_channels, 
+        num_input_channels, 
+        loss, 
+        lr, 
+        momentum, 
+        optimizer, 
+        lrsch, 
+        pretrained=False
+        ):
         """
         Create            
             -arch (string): architecture
-            -loss:
+            -loss (string):
             -lr (float): learning rate
-            -opt: 
-            -lrsch: scheduler learning rate
+            -optimizer (string) : 
+            -lrsch (string): scheduler learning rate
+            -pretrained (bool)
         """
-        
-        self._create_model( arch, num_classes, pretrained )
+                
+        self.s_arch = arch
+        self.s_optimizer = optimizer
+        self.s_lerning_rate_sch = lrsch
+        self.s_loss = loss
+
+        self._create_model( arch, num_output_channels, num_input_channels, pretrained )
         self._create_loss( loss )
-        self._create_optimizer( opt, lr, momentum )
+        self._create_optimizer( optimizer, lr, momentum )
         self._create_scheduler_lr( lrsch )
 
     def training(self, data_loader, epoch=0):
+        pass
 
-        data_time  = torchutl.AverageMeter()
-        batch_time = torchutl.AverageMeter()
-        losses     = torchutl.AverageMeter()
-        accs_t     = torchutl.AverageMeter()
-        accs_for   = torchutl.AverageMeter()
-        accs_bak   = torchutl.AverageMeter()
-        accs_edg   = torchutl.AverageMeter()
-        dices      = torchutl.AverageMeter()
-
-        # switch to evaluate mode
-        self.net.train()
-
-        end = time.time()
-        for i, sample in enumerate(data_loader):
-            
-            # measure data loading time
-            data_time.update(time.time() - end)
-            # get data (image, label, weight)
-            inputs, targets, weights = sample['image'], sample['label'], sample['weight']
-            batch_size = inputs.size(0)
-
-            if self.cuda:
-                targets = targets.cuda(async=True)
-                inputs_var  = Variable(inputs.cuda(),  requires_grad=False)
-                targets_var = Variable(targets.cuda(), requires_grad=False)
-                weights_var = Variable(weights.cuda(), requires_grad=False)
-            else:
-                inputs_var  = Variable(inputs,  requires_grad=False)
-                targets_var = Variable(targets, requires_grad=False)
-                weights_var = Variable(weights, requires_grad=False)
-
-            # fit (forward)
-            outputs = self.net(inputs_var)
-
-            # evaluate criterio
-            loss = self.criterion(outputs, targets_var, weights_var)
-            
-            # measure accuracy and record loss
-            acc_t, acc_for, acc_bak, acc_edg = self.accuracy(outputs, targets_var )
-            dice = self.dice( outputs, targets_var )
-
-            losses.update(loss.data[0], inputs.size(0))
-            accs_t.update(acc_t, inputs.size(0))
-            accs_for.update(acc_for, inputs.size(0))
-            accs_bak.update(acc_bak, inputs.size(0))
-            accs_edg.update(acc_edg, inputs.size(0))
-            dices.update(dice.data[0], inputs.size(0))
-  
-            # optimizer
-            self.optimizer.zero_grad()
-            (loss*batch_size).backward()
-            self.optimizer.step()
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % self.print_freq == 0:  
-
-                strinfo  = '|Train: {:4d}|{:4d}|{:4d} '
-                strinfo += '|time: {batch_time.val:8.4f} '     
-                strinfo += '|loss: {loss.val:8.4f} '
-                strinfo += '|acc: {acc.val:8.4f} ' 
-                strinfo += '|dice: {dice.val:8.4f} '
-                
-                print(
-                    strinfo.format(
-                        epoch, i, len(data_loader),
-                        batch_time=batch_time,
-                        loss=losses,
-                        acc=accs_t,
-                        dice=dices                        
-                    ),
-                    flush=True                
-                    )
-
-                #============ Visdom logging ============#
-                # (1) Log the scalar values
-                info = {
-                    'loss':{'loss':losses}, 
-                    'metric': {'acc_t':accs_t, 'acc_for':accs_for, 'acc_bak':accs_bak, 'acc_edg':accs_edg, 'dice':dices }
-                    }
-
-                for tag, value in info.items():
-                    for k,v in value.items():
-                        self.plotter.plot(tag, 'tr_{}'.format(k), epoch + float(i+1)/len(data_loader), v.avg) 
-
-
-    def evaluate(self, data_loader, epoch=0 ):
-        
-        batch_time = torchutl.AverageMeter()
-        losses     = torchutl.AverageMeter()
-        accs_t     = torchutl.AverageMeter()
-        accs_for   = torchutl.AverageMeter()
-        accs_bak   = torchutl.AverageMeter()
-        accs_edg   = torchutl.AverageMeter()
-        dices      = torchutl.AverageMeter()
-
-        # switch to evaluate mode
-        self.net.eval()
-
-        end = time.time()
-        for i, sample in enumerate(data_loader):
-            
-            # get data (image, label)
-            inputs, targets, weights = sample['image'], sample['label'], sample['weight']
-
-            if self.cuda:
-                targets = targets.cuda(async=True)
-                inputs_var  = Variable(inputs.cuda(),  requires_grad=False, volatile=True)
-                targets_var = Variable(targets.cuda(), requires_grad=False, volatile=True)
-                weights_var = Variable(weights.cuda(), requires_grad=False, volatile=True)
-            else:
-                inputs_var  = Variable(inputs,  requires_grad=False, volatile=True)
-                targets_var = Variable(targets, requires_grad=False, volatile=True)
-                weights_var = Variable(weights, requires_grad=False, volatile=True)
-            
-            # fit (forward)
-            outputs = self.net(inputs_var)
-
-            # evaluate criterio
-            loss = self.criterion(outputs, targets_var, weights_var)
-
-            # measure accuracy and record loss
-            acc_t, acc_for, acc_bak, acc_edg = self.accuracy(outputs, targets_var )
-            dice = self.dice( outputs, targets_var )
-
-            losses.update(loss.data[0], inputs.size(0))
-            accs_t.update(acc_t, inputs.size(0))
-            accs_for.update(acc_for, inputs.size(0))
-            accs_bak.update(acc_bak, inputs.size(0))
-            accs_edg.update(acc_edg, inputs.size(0))
-            dices.update(dice.data[0], inputs.size(0))
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % self.print_freq == 0:
-                strinfo  = '|Valdt: {:4d}|{:4d}|{:4d} '                
-                strinfo += '|time: {batch_time.val:8.4f} '     
-                strinfo += '|loss: {loss.val:8.4f} '
-                strinfo += '|acc: {acc.val:8.4f} '  
-                strinfo += '|dice: {dice.val:8.4f} '
-
-                print(
-                    strinfo.format(
-                        epoch, i, len(data_loader),
-                        batch_time=batch_time,
-                        loss=losses,
-                        acc=accs_t,
-                        dice=dices                      
-                        ) ,
-                    flush=True               
-                    )
-
-        #save validation loss
-        self.vallosses = losses
-
-        #============ Visdom logging ============#
-        # (1) Log the scalar values
-        info = {
-            'loss':{'loss':losses}, 
-            'metric': {'acc_t':accs_t, 'acc_for':accs_for, 'acc_bak':accs_bak, 'acc_edg':accs_edg, 'dice':dices    }
-            }
-
-        for tag, value in info.items():
-            for k,v in value.items():
-                self.plotter.plot(tag, 'ts_{}'.format(k), epoch, v.avg) 
-
-        # print(' * Prec@1 {top1.avg:.3f} Prec@2 {top2.avg:.3f}'
-        #         .format(top1=top1, top2=top2))
-
-        strinfo  = '|Valdt: {:4d}|{:4d}|{:4d} '                
-        strinfo += '|time: {batch_time.avg:8.4f} '     
-        strinfo += '|loss: {loss.avg:8.4f} '
-        strinfo += '|acc: {acc.avg:8.4f} '
-        strinfo += '|dice: {dice.avg:8.4f} '
-
-        print(
-            strinfo.format(
-                epoch, i, len(data_loader),
-                batch_time=batch_time,
-                loss=losses,
-                acc=accs_t,
-                dice=dices                   
-                ) ,
-            flush=True               
-            )
-        
-        #vizual_freq
-        if epoch % 10 == 0:
-
-            ws,hw = 100,100
-            prob = nnfun.softmax(outputs,dim=1)
-            prob = prob.data[0]
-            _,maxprob = torch.max(prob,0)
-            
-            self.visheatmap.show('Label', targets_var.data.cpu()[0].numpy()[1,:,:] )
-            self.visheatmap.show('Weight map', weights_var.data.cpu()[0].numpy()[0,:,:])
-            self.visheatmap.show('Image', inputs_var.data.cpu()[0].numpy()[0,:,:])
-            self.visheatmap.show('Max prob',maxprob.cpu().numpy().astype(np.float32) )
-            for k in range(prob.shapeweight[0]):                
-                self.visheatmap.show('Heat map {}'.format(k), prob.cpu()[k].numpy() )
-           
-
-        return accs_t.avg
-
+    def evaluate(self, data_loader, epoch=0):
+        pass
 
     def test(self, data_loader):
         pass
 
-
-    def inference(self, image):  
-        pass      
-
+    def inference(self, image):        
+        pass
 
     def representation(self, data_loader):
         pass
-
-
     
-    def _create_model(self, arch='simplenet', num_classes=3, pretrained=False):
+    def fit( self, train_loader, val_loader, epochs=100, snapshot=10 ):
+
+        best_prec = 0
+        print('Epoch: {}/{}'.format(self.start_epoch, epochs))
+
+        self.evaluate(val_loader, epoch=self.start_epoch)        
+        for epoch in range(self.start_epoch, epochs):       
+
+            try:
+                
+                self._to_beging_epoch(epoch, epochs, train_loader, val_loader)
+
+                self.adjust_learning_rate(epoch)     
+                self.training(train_loader, epoch)
+
+                print('\nEpoch: {}/{} ({}%)'.format(epoch,epochs, int((float(epoch)/epochs)*100) ) )
+                print('-' * 25)
+                
+                prec = self.evaluate(val_loader, epoch+1 )            
+
+                # remember best prec@1 and save checkpoint
+                is_best = prec > best_prec
+                best_prec = max(prec, best_prec)
+                if epoch % snapshot == 0 or is_best or epoch==(epochs-1) :
+                    self.save(epoch, best_prec, is_best, 'chk{:06d}.pth.tar'.format(epoch))
+
+                self._to_end_epoch(epoch, epochs, train_loader, val_loader)
+
+            except KeyboardInterrupt:
+                
+                print('Ctrl+C, saving snapshot')
+                is_best = False
+                best_prec = 0
+                self.save(epoch, best_prec, is_best, 'chk{:06d}.pth.tar'.format(epoch))
+                return
+
+    def _to_beging_epoch(self, epoch, epochs, train_loader, val_loader):
+        pass
+
+    def _to_end_epoch(self, epoch, epochs, train_loader, val_loader):
+        pass
+
+
+    def _create_model(self, arch, num_output_channels, num_input_channels, pretrained):
         """
         Create model
-            -arch: select architecture
-            -num_classes
-            -pretrained
+            -arch (string): select architecture
+            -num_classes (int)
+            -pretrained (bool)
 
-        """        
-        self.net = None       
+        """    
+        pass
 
-        # Pytorch Archtectures 
-        #--------------------------------------------------------------------------------------------
-        if arch == 'unet':
-            self.net = nnmodels.unet( n_classes = num_classes )  
-        elif arch == 'unet11':
-            self.net = nnmodels.unet11( num_classes = num_classes ) 
-        elif arch == 'dunet':
-            self.net = nnmodels.dunet( n_classes = num_classes )                   
-        else:
-            assert(False)
+    def _create_loss(self, loss):
+        """
+        Create loss
+            -loss (string): select loss function
+        """
+        pass
+
+    def _create_optimizer(self, optimizer='adam', lr=0.0001, momentum=0.99):
+        """
+        Create optimizer
+            -optimizer (string): select optimizer function
+            -lr (float): learning rate
+            -momentum (float): momentum
+        """
         
-        self.arch = arch
-        self.num_classes = num_classes
-        if self.cuda == True:
-            self.net.cuda()
+        self.optimizer = None
 
-        if self.parallel == True and self.cuda == True:
-            self.net = nn.DataParallel(self.net, device_ids=range(torch.cuda.device_count()))
-    
-
-    def _create_loss(self, loss='wmcedice'):
-        # create loss
-
-        if loss == 'wmce':
-            self.criterion = nloss.WeightedMCEloss()
-        elif loss == 'bdice':
-            self.criterion = nloss.BDiceLoss()
-        elif loss == 'wbdice':
-            self.criterion = nloss.WeightedBDiceLoss()
-        elif loss == 'wmcedice':
-            self.criterion = nloss.WeightedMCEDiceLoss()
-        elif loss == 'wfocalmce':
-            self.criterion = nloss.WeightedMCEFocalloss()
-        elif loss == 'mcedice':
-            self.criterion = nloss.MCEDiceLoss()            
-        else:
-            assert(False)
-        
-        
-
-    def _create_optimizer(self, opt='adam', lr=0.0001, momentum=0.99):
-        
         # create optimizer
-        if opt == 'adam':
+        if optimizer == 'adam':
             self.optimizer = torch.optim.Adam( self.net.parameters(), lr=lr)
-        elif opt == 'sgd':
+        elif optimizer == 'sgd':
             self.optimizer = torch.optim.SGD( self.net.parameters(), lr=lr, momentum=momentum)
-        elif opt == 'rprop':
+        elif optimizer == 'rprop':
             self.optimizer = torch.optim.Rprop( self.net.parameters(), lr=lr) 
-        elif opt == 'rmsprop':
+        elif optimizer == 'rmsprop':
             self.optimizer = torch.optim.RMSprop( self.net.parameters(), lr=lr)           
         else:
             assert(False)
 
         self.lr = lr; 
         self.momentum = momentum
-        self.opt=opt
+        self.s_optimizer = optimizer
 
     def _create_scheduler_lr(self, lrsch ):
         
@@ -421,43 +240,42 @@ class Network(object):
         elif lrsch == 'exp':
             self.lrscheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99 )
         elif lrsch == 'plateau':
-            self.lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=100)
+            self.lrscheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=10)
         else:
             assert(False)
         
-        self.lrsch = lrsch
+        self.s_lerning_rate_sch = lrsch
 
     def adjust_learning_rate(self, epoch):
         """
         Update learning rate
-        """        
-        
+        """       
+ 
         # update
-        if self.lrsch == 'fixed':
-            lr = self.lr
-        elif self.lrsch == 'plateau':
+        if self.s_lerning_rate_sch == 'fixed': lr = self.lr
+        elif self.s_lerning_rate_sch == 'plateau':
             self.lrscheduler.step( self.vallosses.val )
             for param_group in self.optimizer.param_groups:
                 lr = float(param_group['lr'])
-                break
-            #return
+                break            
         else:                    
             self.lrscheduler.step() 
             lr = self.lrscheduler.get_lr()[0]        
 
         # draw
         self.plotter.plot('lr', 'learning rate', epoch, lr )
-
+ 
     def resume(self, pathnammodel):
         """
         Resume: optionally resume from a checkpoint
         """ 
         net = self.net.module if self.parallel else self.net
-        start_epoch, prec = torchutl.resumecheckpoint( 
+        start_epoch, prec = nutl.resumecheckpoint( 
             pathnammodel, 
             net, 
             self.optimizer 
             )
+
         self.start_epoch = start_epoch
         return start_epoch, prec
 
@@ -465,12 +283,15 @@ class Network(object):
         """
         Save model
         """
+        print('>> save model epoch {} ({}) in {}'.format(epoch, prec, filename))
         net = self.net.module if self.parallel else self.net
-        torchutl.save_checkpoint(
+        nutl.save_checkpoint(
             {
                 'epoch': epoch + 1,
-                'arch': self.arch,
-                'num_classes': self.num_classes,
+                'arch': self.s_arch,
+                'imsize': self.size_input,
+                'num_classes': self.num_output_channels,
+                'num_channels': self.num_input_channels,
                 'state_dict': net.state_dict(),
                 'prec': prec,
                 'optimizer' : self.optimizer.state_dict(),
@@ -479,45 +300,417 @@ class Network(object):
             self.pathmodels,
             filename
             )
-    
+   
     def load(self, pathnamemodel):
         bload = False
         if pathnamemodel:
             if os.path.isfile(pathnamemodel):
                 print("=> loading checkpoint '{}'".format(pathnamemodel))
+                checkpoint = torch.load( pathnamemodel ) if self.cuda else torch.load( pathnamemodel, map_location=lambda storage, loc: storage )
                 
-                if self.cuda:               
-                    checkpoint = torch.load( pathnamemodel )
-                else:
-                    checkpoint = torch.load( pathnamemodel, map_location=lambda storage, loc: storage )
+                self._create_model(checkpoint['arch'], checkpoint['num_classes'], checkpoint['num_channels'], False )                
+                self.net.load_state_dict( checkpoint['state_dict'] )               
 
-                self._create_model(checkpoint['arch'], checkpoint['num_classes'])
-                self.net.load_state_dict( checkpoint['state_dict'] )
-                
                 print("=> loaded checkpoint for {} arch!".format(checkpoint['arch']))
                 bload = True
-
             else:
-                print("=> no checkpoint found at '{}'".format(pathnamemodel))
-        
+                print("=> no checkpoint found at '{}'".format(pathnamemodel))        
         return bload
    
-
     def __str__(self): 
         return str(
                 'Name: {} \n'
                 'arq: {} \n'
+                'loss: {} \n'
+                'optimizer: {} \n'
                 'lr: {} \n'
+                'size input: {} \n'
+                'num input channels {} \n'
+                'num output channels: {} \n'
                 'Model: \n{} \n'.format(
-                self.nameproject,
-                self.arch,
-                self.lr,
-                self.net
-                )
+                    self.nameproject,
+                    self.s_arch,
+                    self.s_loss,
+                    self.s_optimizer,
+                    self.lr,
+                    self.size_input,
+                    self.num_input_channels,
+                    self.num_output_channels,
+                    self.net
+                    )
                 )
 
 
-    
+#----------------------------------------------------------------------------------------------
+# Neural Net for segmentation
+
+
+class SegmentationNeuralNet(AbstractNeuralNet):
+    """
+    Segmentation Neural Net 
+    """
+
+    def __init__(self,
+        patchproject,
+        nameproject,
+        no_cuda=True,
+        parallel=False,
+        seed=1,
+        print_freq=10,
+        gpu=0
+        ):
+        """
+        Initialization
+            -patchproject (str): path project
+            -nameproject (str):  name project
+            -no_cuda (bool): system cuda (default is True)
+            -parallel (bool)
+            -seed (int)
+            -print_freq (int)
+            -gpu (int)
+        """
+
+        super(SegmentationNeuralNet, self).__init__( patchproject, nameproject, no_cuda, parallel, seed, print_freq, gpu  )
+
+ 
+    def create(self, 
+        arch, 
+        num_output_channels, 
+        num_input_channels,  
+        loss, 
+        lr, 
+        momentum, 
+        optimizer, 
+        lrsch,          
+        pretrained=False,
+        size_input=388,
+        
+        ):
+        """
+        Create            
+            -arch (string): architecture
+            -loss (string):
+            -lr (float): learning rate
+            -optimizer (string) : 
+            -lrsch (string): scheduler learning rate
+            -pretrained (bool)
+        """
+        super(SegmentationNeuralNet, self).create( arch, num_output_channels, num_input_channels, loss, lr, momentum, optimizer, lrsch, pretrained)
+        self.size_input = size_input
+        
+        self.accuracy = nloss.Accuracy()
+        self.dice = nloss.Dice()
+       
+        # Set the graphic visualization
+        self.logger_train = Logger( 'Train', ['loss'], ['accs', 'dices'], self.plotter  )
+        self.logger_val   = Logger( 'Val  ', ['loss'], ['accs', 'dices'], self.plotter )
+
+        self.visheatmap = gph.HeatMapVisdom(env_name=self.nameproject, heatsize=(100,100) )
+        self.visimshow = gph.ImageVisdom(env_name=self.nameproject, imsize=(100,100) )
+
+      
+    def training(self, data_loader, epoch=0):
         
 
+        #reset logger
+        self.logger_train.reset()
+        data_time = AverageMeter()
+        batch_time = AverageMeter()
+
+        # switch to evaluate mode
+        self.net.train()
+
+        end = time.time()
+        for i, sample in enumerate(data_loader):
+            
+            # measure data loading time
+            data_time.update(time.time() - end)
+            # get data (image, label, weight)
+            inputs, targets, weights = sample['image'], sample['label'], sample['weight']
+            batch_size = inputs.size(0)
+
+            if self.cuda:
+                targets = targets.cuda(non_blocking=True, async=True)
+                inputs_var  = Variable(inputs.cuda(),  requires_grad=False)
+                targets_var = Variable(targets.cuda(), requires_grad=False)
+                weights_var = Variable(weights.cuda(), requires_grad=False)
+            else:
+                inputs_var  = Variable(inputs,  requires_grad=False)
+                targets_var = Variable(targets, requires_grad=False)
+                weights_var = Variable(weights, requires_grad=False)
+
+            # fit (forward)
+            outputs = self.net(inputs_var)
+
+            # measure accuracy and record loss
+            loss = self.criterion(outputs, targets_var, weights_var)            
+            accs = self.accuracy(outputs, targets_var )
+            dices = self.dice( outputs, targets_var )
+              
+            # optimizer
+            self.optimizer.zero_grad()
+            (loss*batch_size).backward()
+            self.optimizer.step()
+            
+            # update
+            self.logger_train.update(
+                {'loss': loss.data[0] },
+                {'accs': accs, 'dices': dices },      
+                batch_size,
+                )
+            
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % self.print_freq == 0:  
+                self.logger_train.logger( epoch, epoch + float(i+1)/len(data_loader), i, len(data_loader), batch_time,   )
+
+
+
+
+    def evaluate(self, data_loader, epoch=0):
+        
+        # reset loader
+        self.logger_val.reset()
+        batch_time = AverageMeter()
+
+        # switch to evaluate mode
+        self.net.eval()
+        with torch.no_grad():
+            end = time.time()
+            for i, sample in enumerate(data_loader):
+                
+                # get data (image, label)
+                inputs, targets, weights = sample['image'], sample['label'], sample['weight']
+                batch_size = inputs.size(0)
+
+                if self.cuda:
+                    targets = targets.cuda( non_blocking=True, async=True )
+                    inputs_var  = Variable(inputs.cuda(),  requires_grad=False, volatile=True)
+                    targets_var = Variable(targets.cuda(), requires_grad=False, volatile=True)
+                    weights_var = Variable(weights.cuda(), requires_grad=False, volatile=True)
+                else:
+                    inputs_var  = Variable(inputs,  requires_grad=False, volatile=True)
+                    targets_var = Variable(targets, requires_grad=False, volatile=True)
+                    weights_var = Variable(weights, requires_grad=False, volatile=True)
+                
+                # fit (forward)
+                outputs = self.net(inputs_var)
+
+                # measure accuracy and record loss
+                loss = self.criterion(outputs, targets_var, weights_var)   
+                accs = self.accuracy(outputs, targets_var )
+                dices = self.dice( outputs, targets_var )  
+               
+
+                # measure elapsed time
+                batch_time.update(time.time() - end)
+                end = time.time()
+
+                # update
+                self.logger_val.update( 
+                    {'loss': loss.data[0] },
+                    {'accs': accs, 'dices': dices },      
+                    batch_size,          
+                    )
+
+                if i % self.print_freq == 0:
+                    self.logger_val.logger(
+                        epoch, epoch, i,len(data_loader), 
+                        batch_time, 
+                        bplotter=False,
+                        bavg=True, 
+                        bsummary=False,
+                        )
+
+        #save validation loss
+        self.vallosses = self.logger_val.info['loss']['loss'].avg
+        acc = self.logger_val.info['metrics']['accs'].avg
+
+        self.logger_val.logger(
+            epoch, epoch, i, len(data_loader), 
+            batch_time,
+            bplotter=True,
+            bavg=True, 
+            bsummary=True,
+            )
+
+        #vizual_freq
+        if epoch % 10 == 0:
+            
+            ws,hw = 100,100
+            prob = F.softmax(outputs,dim=1)
+            prob = prob.data[0]
+            _,maxprob = torch.max(prob,0)
+            
+            self.visheatmap.show('Label', targets_var.data.cpu()[0].numpy()[1,:,:] )
+            self.visheatmap.show('Weight map', weights_var.data.cpu()[0].numpy()[0,:,:])
+            self.visheatmap.show('Image', inputs_var.data.cpu()[0].numpy()[0,:,:])
+            self.visheatmap.show('Max prob',maxprob.cpu().numpy().astype(np.float32) )
+            for k in range(prob.shape[0]):                
+                self.visheatmap.show('Heat map {}'.format(k), prob.cpu()[k].numpy() )
+                
+        
+        return acc
+
+    def test(self, data_loader, bgt=False):
+         
+        n = len(data_loader)*data_loader.batch_size
+        Yhat = np.zeros((n, self.num_output_channels ))
+        Y = np.zeros((n,) )
+        Ids = np.zeros((n,) )
+        k=0
+
+        # switch to evaluate mode
+        self.net.eval()
+        with torch.no_grad():
+            end = time.time()
+            for i, sample in enumerate( tqdm(data_loader) ):
+                
+                # get data (image, label)
+                inputs  = sample['image']      
+                targets = nutl.argmax(sample['labels']) if bgt else np.zeros( (inputs.shape[0]) )                     
+                Id = sample['id'] if not bgt else np.zeros( (inputs.shape[0]) ) 
+                
+                x = inputs.cuda() if self.cuda else inputs    
+                x  = Variable(x, requires_grad=False, volatile=True )
+                
+                # fit (forward)
+                yhat = self.net(x)
+                yhat = F.softmax(yhat, dim=1)    
+                yhat = nutl.to_np(yhat)
     
+                for j in range(yhat.shape[0]):
+                        Y[k] = targets[j]
+                        Yhat[k,:] = yhat[j]
+                        Ids[k] = Id[j]  
+                        k+=1 
+
+                #print( 'Test:', i , flush=True )
+
+        Yhat = Yhat[:k,:]
+        Y = Y[:k]
+        Ids = Ids[:k]
+                
+        return Ids, Yhat, Y
+
+    
+    
+    def inference(self, image):        
+        
+        # switch to evaluate mode
+        self.net.eval()
+        x = inputs.cuda() if self.cuda else inputs    
+        x  = Variable(x, requires_grad=False, volatile=True )
+
+        msoft = nn.Softmax()
+        yhat = msoft(self.net(x))
+        yhat = nutl.to_np(yhat)
+
+        return yhat
+
+
+    def representation(self, data_loader):
+        """"
+        Representation
+            -data_loader: simple data loader for image
+        """
+                
+        # switch to evaluate mode
+        self.net.eval()
+
+        n = len(data_loader)*data_loader.batch_size
+        k=0
+
+        # embebed features 
+        embX = np.zeros([n,self.net.dim])
+        embY = np.zeros([n,1])
+
+        batch_time = nutl.AverageMeter()
+        end = time.time()
+        for i, sample in enumerate(data_loader):
+                        
+            # get data (image, label)
+            inputs, targets = sample['image'], nutl.argmax(sample['labels'])
+            inputs_var = nutl.to_var(inputs, self.cuda, False, True )
+
+            # representation
+            emb = self.net.representation(inputs_var)
+            emb = nutl.to_np(emb)
+            for j in range(emb.shape[0]):
+                embX[k,:] = emb[j,:]
+                embY[k] = targets[j]
+                k+=1
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            print('Representation: |{:06d}/{:06d}||{batch_time.val:.3f} ({batch_time.avg:.3f})|'.format(i,len(data_loader), batch_time=batch_time) )
+
+
+        embX = embX[:k,:]
+        embY = embY[:k]
+
+
+        return embX, embY
+    
+    def _create_model(self, arch, num_output_channels, num_input_channels, pretrained ):
+        """
+        Create model
+            -arch (string): select architecture
+            -num_classes (int)
+            -num_channels (int)
+            -pretrained (bool)
+        """    
+
+        self.net = None    
+
+        #-------------------------------------------------------------------------------------------- 
+        # select architecture
+        #--------------------------------------------------------------------------------------------
+        #kw = {'num_classes': num_output_channels, 'num_channels': num_input_channels, 'pretrained': pretrained}
+
+        if arch == 'unet':
+            self.net = nnmodels.unet( num_classes = num_output_channels )  
+        elif arch == 'unet11':
+            self.net = nnmodels.unet11( num_classes = num_output_channels ) 
+        elif arch == 'dunet':
+            self.net = nnmodels.dunet( n_classes = num_output_channels )                   
+        else:
+            assert(False)
+        
+        self.s_arch = arch
+        self.num_output_channels = num_output_channels
+        self.num_input_channels = num_input_channels
+
+        if self.cuda == True:
+            self.net.cuda()
+        if self.parallel == True and self.cuda == True:
+            self.net = nn.DataParallel(self.net, device_ids= range( torch.cuda.device_count() ))
+
+    def _create_loss(self, loss):
+
+        # create loss
+        if loss == 'wmce':
+            self.criterion = nloss.WeightedMCEloss()
+        elif loss == 'bdice':
+            self.criterion = nloss.BDiceLoss()
+        elif loss == 'wbdice':
+            self.criterion = nloss.WeightedBDiceLoss()
+        elif loss == 'wmcedice':
+            self.criterion = nloss.WeightedMCEDiceLoss()
+        elif loss == 'wfocalmce':
+            self.criterion = nloss.WeightedMCEFocalloss()
+        elif loss == 'mcedice':
+            self.criterion = nloss.MCEDiceLoss()  
+        else:
+            assert(False)
+
+        self.s_loss = loss
+
+
+
+
+

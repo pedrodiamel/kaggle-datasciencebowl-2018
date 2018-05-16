@@ -62,7 +62,7 @@ class DilateCenter(nn.Module):
 
 class DUNet(nn.Module):
 
-    def __init__(self, n_classes=3, is_deconv=False, in_channels=3, is_batchnorm=False):
+    def __init__(self, num_classes=3, is_deconv=False, in_channels=3, is_batchnorm=False):
         super(DUNet, self).__init__()
         self.is_deconv = is_deconv
         self.in_channels = in_channels
@@ -81,7 +81,7 @@ class DUNet(nn.Module):
         self.up3 = unetUp(filters[3], filters[2], self.is_deconv)
         self.up2 = unetUp(filters[2], filters[1], self.is_deconv)
         self.up1 = unetUp(filters[1], filters[0], self.is_deconv)
-        self.final = nn.Conv2d(filters[0], n_classes, 1)
+        self.final = nn.Conv2d(filters[0], num_classes, 1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -138,7 +138,7 @@ class unetDown(nn.Module):
     def forward(self, inputs):
         outputs = self.conv(inputs)
         outputs1 = self.down(outputs)
-        return outputs1,outputs
+        return outputs1, outputs
 
 
 class unetUp(nn.Module):

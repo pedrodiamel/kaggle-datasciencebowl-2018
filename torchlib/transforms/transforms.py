@@ -359,10 +359,11 @@ class ToResizeUNetFoV(ToTransform):
         self.fov=fov
         self.padding_mode = padding_mode
         
-    def __call__(self,obj):
-        obj.to_unet_input( self.fov, self.padding_mode )
+    def __call__(self, obj):
+        obj.resize_unet_input( self.fov, self.padding_mode )
         return obj
     
+
 
 
 class CenterCrop(ToTransform):

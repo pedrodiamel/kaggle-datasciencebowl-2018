@@ -12,114 +12,87 @@ import scipy.misc
 import cv2
 
 from torchlib.datasets.syntheticdata import SynteticCircleDataset
+from torchlib.neuralnet import SegmentationNeuralNet
 from torchlib.datasets import imageutl as imutl
 from torchlib.datasets import utility as utl
+
 
 from torchlib.transforms import transforms as mtrans
 from torchlib import visualization as view
 
 
+project='out/netruns'
+name='test_001'
+no_cuda=True
+parallel=False
+seed=1
+print_freq=10
+gpu=0
+arch='unet'
+num_classes=3
+num_channels=3 
+loss='mcedice'
+lr=0.0001
+momentum=0.99
+opt='adam'
+scheduler='fixed'
+finetuning=False
+nepoch=5
+
+network = SegmentationNeuralNet(
+        patchproject=project,
+        nameproject=name,
+        no_cuda=no_cuda,
+        parallel=parallel,
+        seed=seed,
+        print_freq=print_freq,
+        gpu=gpu
+        )
+
+network.create(
+        arch=arch, 
+        num_output_channels=num_classes, 
+        num_input_channels=num_channels,  
+        loss=loss, 
+        lr=lr, 
+        momentum=momentum,
+        optimizer=opt,
+        lrsch=scheduler,
+        pretrained=finetuning,
+        
+        )
+
+print(network)
+
 data = SynteticCircleDataset(
         count=100,
-        imsize=(512,512),
+        imsize=(250,250),
         sigma=0.01,
         bdraw_grid=True,
         transform=transforms.Compose([
-
-              ## resize and crop
-                           
-              #mtrans.CenterCrop( (200,200) ),
-              mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
-              mtrans.ToResizeUNetFoV(100, cv2.BORDER_REFLECT_101),
-              
-              ## color 
-
-              #mtrans.RandomSaturation(),
-              #mtrans.RandomHueSaturationShift(),
-              #mtrans.RandomHueSaturation(),
-              #mtrans.RandomRGBShift(),
-              #mtrans.ToNegative(),
-              #mtrans.RandomRGBPermutation(),
-              #mtrans.ToGrayscale(),
-
-              ## blur
-
-              #mtrans.ToRandomTransform( mtrans.ToLinealMotionBlur( lmax=1 ), prob=0.5 ),
-              #mtrans.ToRandomTransform( mtrans.ToMotionBlur( ), prob=0.5 ),
-              mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),
-              
-              ## geometrical 
-
-              #mtrans.ToRandomTransform( mtrans.HFlip(), prob=0.5 )
-              #mtrans.ToRandomTransform( mtrans.VFlip(), prob=0.5 )
-              #mtrans.RandomScale(factor=0.2, padding_mode=cv2.BORDER_REFLECT101 ),
-              #mtrans.RandomGeometricalTranform( angle=360, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT101),
-              #mtrans.RandomElasticDistort( size_grid=50, padding_mode=cv2.BORDER_REFLECT101 ),
-              
-              ## tensor 
-              
+              mtrans.ToResizeUNetFoV(100, cv2.BORDER_CONSTANT),
+              mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),                                         
               mtrans.ToTensor(),
-              #mtrans.RandomElasticTensorDistort( size_grid=10, deform=0.05 ),
-              
-              ## normalization
-
               mtrans.ToNormalization(),
-              #mtrans.ToWhiteNormalization(),
-              #mtrans.ToMeanNormalization(
-              #    mean=[0.485, 0.456, 0.406],
-              #    std=[0.229, 0.224, 0.225]
-              #    ),
-
-
             ])
         )
 
-dataloader = DataLoader(data, batch_size=3, shuffle=True, num_workers=1 )
+dataloader_train = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
+dataloader_val = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
+dataloader_test = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 
-label_batched = []
-for i_batch, sample_batched in enumerate(dataloader):
-    print(i_batch, sample_batched['image'].size(),
-          sample_batched['label'].size(),
-          sample_batched['weight'].size()    
-         )
+
+network.evaluate(dataloader_train, epoch=0)
+
+
+for epoch in range(nepoch):
     
-    image_a = sample_batched['image'][0,:,...]
-    image_b = sample_batched['image'][1,:,...]
-    image_c = sample_batched['image'][2,:,...]
-
-    image = sample_batched['image'][0,0,...]
-    label = sample_batched['label'][0,1,...]
-    weight = sample_batched['weight'][0,0,...]
+    print('\nEpoch: {}/{} ({}%)'.format(epoch, nepoch, int((float(epoch)/nepoch)*100) ) )
+    print('-' * 25)
     
-    print(torch.min(image), torch.max(image), image.shape )
-    print(torch.min(label), torch.max(label), image.shape )
-    print(torch.min(weight), torch.max(weight), image.shape )
+    network.training(dataloader_val, epoch=epoch)
+    network.evaluate(dataloader_test, epoch=epoch+1)
 
-    print(image_a.shape)
-    print( np.unique(label) )
-    print(image_a.min(), image_a.max())
-        
-    plt.figure( figsize=(15,15) )
-    plt.subplot(131)
-    plt.imshow( image_a.permute(1,2,0).squeeze()  ) #, cmap='gray' 
-    plt.axis('off')
-    plt.ioff()
+print('DONE!!!')
 
-    plt.subplot(132)
-    #plt.imshow( image_b.permute(1,2,0).squeeze() ) 
-    plt.imshow( label ) #cmap='gray'
-    plt.axis('off')
-    plt.ioff()
-
-    plt.subplot(133)
-    #plt.imshow( image_c.permute(1,2,0).squeeze()  ) 
-    plt.imshow( weight )
-    plt.axis('off')
-
-    plt.ioff()       
-    plt.show()        
-
-    # observe 4th batch and stop.
-    if i_batch == 3: 
-        break        
 

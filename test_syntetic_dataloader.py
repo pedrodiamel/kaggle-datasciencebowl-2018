@@ -29,8 +29,8 @@ data = SynteticCircleDataset(
               ## resize and crop
                            
               #mtrans.CenterCrop( (200,200) ),
-              mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
-              mtrans.ToResizeUNetFoV(100, cv2.BORDER_REFLECT_101),
+              #mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
+              mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT_101),
               
               ## color 
 
@@ -88,7 +88,7 @@ for i_batch, sample_batched in enumerate(dataloader):
     image_c = sample_batched['image'][2,:,...]
 
     image = sample_batched['image'][0,0,...]
-    label = sample_batched['label'][0,1,...]
+    label = sample_batched['label'][0,2,...]
     weight = sample_batched['weight'][0,0,...]
     
     print(torch.min(image), torch.max(image), image.shape )

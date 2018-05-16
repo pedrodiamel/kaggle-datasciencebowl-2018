@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
+
     
 class WeightedMCEloss(nn.Module):
 
@@ -21,8 +22,8 @@ class WeightedMCEloss(nn.Module):
         logpy = torch.sum( weight * y_pred_log * y_true, dim=1 )
         #loss  = -torch.sum(logpy) / torch.sum(weight)
         loss  = -torch.mean(logpy)
-
         return loss
+
 
 class WeightedMCEFocalloss(nn.Module):
     
@@ -83,20 +84,16 @@ class WeightedBDiceLoss(nn.Module):
         super(WeightedBDiceLoss, self).__init__()
         self.sigmoid = nn.Sigmoid()
 
-
     def forward(self, y_pred, y_true, weight ):
         
         n, ch, h, w = y_pred.size()
         y_true = centercrop(y_true, w, h)
         weight = centercrop(weight, w, h )
-
         y_pred = self.sigmoid(y_pred)
-
         smooth = 1.
         w, m1, m2 = weight, y_true, y_pred
         score = (2. * torch.sum(w * m1 * m2) + smooth) / (torch.sum(w * m1) + torch.sum(w * m2) + smooth)
         loss = 1. - torch.sum(score)
-
         return loss
 
 
@@ -110,7 +107,6 @@ class BDiceLoss(nn.Module):
         
         n, ch, h, w = y_pred.size()
         y_true = centercrop(y_true, w, h)
-
         y_pred = self.sigmoid(y_pred)
 
         smooth = 1.
@@ -164,74 +160,80 @@ class MCEDiceLoss(nn.Module):
     def __init__(self, alpha=1.0, gamma=1.0  ):
         super(MCEDiceLoss, self).__init__()
         self.loss_mce = BCELoss()
-        self.loss_dice = BLogDiceLoss()
+        self.loss_dice = BLogDiceLoss( classe=0  )
         self.alpha = alpha
         self.gamma = gamma
 
     def forward(self, y_pred, y_true, weight ):        
         
-        alpha = self.alpha                
-        loss_dice = self.loss_dice(y_pred, y_true)        
-        loss_fg  = self.loss_mce( y_pred[:,1,...].unsqueeze(1), y_true[:,1,...].unsqueeze(1) )
-        loss_th  = self.loss_mce( y_pred[:,2,...].unsqueeze(1), y_true[:,2,...].unsqueeze(1) )
-        loss = 0.5*loss_fg + 0.5*loss_th + alpha*loss_dice     
+        alpha = self.alpha  
+
+        # bce(all_channels) +  dice_loss(mask_channel) + dice_loss(border_channel)   
+        loss_all  = self.loss_mce(y_pred[:,:2,...], y_true[:,:2,...])        
+        
+        #loss_fg   = self.loss_dice( y_pred[:,1,...].unsqueeze(1), y_true[:,1,...].unsqueeze(1) )
+        #loss_th   = self.loss_dice( y_pred[:,2,...].unsqueeze(1), y_true[:,2,...].unsqueeze(1) )
+        #loss = loss_all + loss_fg + loss_th           
+        loss = loss_all
+
         return loss
 
 
 class Accuracy(nn.Module):
     
-    def __init__(self):
+    def __init__(self, bback_ignore=True):
         super(Accuracy, self).__init__()
+        self.bback_ignore = bback_ignore 
 
-    def forward(self, input, target ):
+    def forward(self, y_pred, y_true ):
         
-        n, ch, h, w = input.size()
-        nt,ct, ht,wt= target.size()
-        
-        target = centercrop(target, w, h)
+        n, ch, h, w = y_pred.size()        
+        y_true = centercrop(y_true, w, h)
 
-        prob = F.softmax(input, dim=1)
-        prob = prob.data
+        prob = F.softmax(y_pred, dim=1).data
         _, maxprob = torch.max(prob,1)
                 
-        correct = torch.zeros(ch)
-        for c in range(ch):
-            ctarget = target[:,c,...]
-            num = (((maxprob.eq(c) + ctarget.data.eq(1)).eq(2)).float().sum() + 1 )
-            den = (ctarget.data.eq(1).float().sum() + 1)
-            correct[c] = num/den
+        accs = []
+        for c in range(int(self.bback_ignore), ch):
+            yt_c = y_true[:,c,...]
+            num = (((maxprob.eq(c) + yt_c.data.eq(1)).eq(2)).float().sum() + 1 )
+            den = (yt_c.data.eq(1).float().sum() + 1)
+            acc = (num/den)*100
+            accs.append(acc)
 
-        forg_acc  =  100.0*correct[1]
-        back_acc  =  100.0*correct[0]
-        edge_acc  =  100.0*correct[2]
-        total_acc =  ( forg_acc + back_acc + edge_acc )/ch
-
-        return total_acc, forg_acc, back_acc, edge_acc
+        return np.mean(accs)
 
 
 class Dice(nn.Module):
     
-    def __init__(self):
+    def __init__(self, bback_ignore=True):
         super(Dice, self).__init__()
-        self.sigmoid = nn.Sigmoid()
+        self.bback_ignore = bback_ignore        
 
 
     def forward(self, y_pred, y_true ):
         
+        eps = 1e-15
         n, ch, h, w = y_pred.size()
         y_true = centercrop(y_true, w, h)
 
         prob = F.softmax(y_pred, dim=1)
         prob = prob.data
-        _, maxprob = torch.max(prob,1)
+        _, prediction = torch.max(prob, dim=1)
 
-        y_true_f = flatten(y_true[:,1,...]).float()
-        y_pred_f = flatten(maxprob).float()
-                
-        intersection = y_true_f * y_pred_f
-        score = 2. * torch.sum(intersection) / (torch.sum(y_true_f) + torch.sum(y_pred_f))
+        y_pred_f = flatten(prediction).float()
+        dices = []
+        for c in range(int(self.bback_ignore), ch):
+            y_true_f = flatten(y_true[:,c,...]).float()
+            intersection = y_true_f * y_pred_f
+            dice = (2. * torch.sum(intersection) / ( torch.sum(y_true_f) + torch.sum(y_pred_f) + eps ))*100
+            dices.append(dice)
 
-        return 100*score
+        return np.mean(dices)
+
+
+
+
 
 
 

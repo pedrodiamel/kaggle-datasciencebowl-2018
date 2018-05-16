@@ -1,4 +1,6 @@
 
+
+import numpy as np
 import torch as th
 import torch.nn as nn
 from torch.autograd import Variable
@@ -22,6 +24,86 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
     
+
+class AverageFilterMeter(AverageMeter):
+    def __init__(self, depth=10):
+        
+        self.depth = depth
+        self.buff = np.zeros( (self.depth,1) )
+        self.favg = 0
+        self.itr = 0
+        self.n=0     
+
+        super(AverageFilterMeter, self  ).__init__()
+
+    def update(self, val, n=1):
+        super(AverageFilterMeter, self).update( val, n)
+        self.n+= int(self.n < self.depth)            
+        self.buff[ self.itr ] = val
+        self.favg = self.buff.sum()/self.n        
+        self.itr = (self.itr+1)%len(self.buff)
+        
+
+
+
+class Logger(object):
+    
+    def __init__(self, title_name,  loss, metrics, plotter):
+        """Initialization
+        Args:
+            @title_name: name id
+            @loss: loss name list
+            @metrics: metric name list
+            @plotter: object plotter
+        """
+        self.plotter = plotter
+        self.title_name = title_name
+
+        dloss = dict(zip(loss, [ AverageFilterMeter() for _ in range(0, len(loss))]))
+        dmetrics = dict(zip(metrics, [ AverageFilterMeter() for _ in range(0, len(metrics))]))
+
+        self.info = {
+            'loss': dloss ,
+            'metrics': dmetrics ,
+        }
+
+
+    def _get( self ):        
+        info = self.info
+        for tag, value in info.items():
+            for k,v in value.items():
+                yield( tag, k, v )
+
+    def update(self, loss, metrics, n):        
+        for k,v in loss.items(): self.info['loss'][k].update( v, n )
+        for k,v in metrics.items(): self.info['metrics'][k].update( v, n )
+
+    
+    def reset( self ):
+        for t,k,v in self._get():
+            v.reset()
+
+    def logger(self, epoch, iterepoch, i, num, time, bplotter=True, bavg=False, bsummary=False  ): 
+
+        strinfo  = '|{}: {:4d}|{:4d}|{:4d} '.format(self.title_name, epoch, i, num)
+        strinfo += '|time: {:8.4f} '.format(time.val)  
+        strsummary = '\nValidation:\n'       
+
+        for t,k,v in self._get():
+            strinfo += '|{}: {:8.4f} '.format( k, v.avg )
+            strsummary += ' * {}: {:.3f} ({:.3f})\n'.format(k, v.val, v.avg )
+
+            if not bplotter: continue 
+            if bavg: self.plotter.plot(t, '{}_{} (avg)'.format(self.title_name,k), iterepoch, v.avg)
+            else: self.plotter.plot(t, '{}_{} (avg)'.format(self.title_name,k), iterepoch, v.favg)
+            self.plotter.plot(t, '{}_{} (val)'.format(self.title_name,k), iterepoch, v.val)
+
+        print(strinfo, flush=True )
+        if bsummary: print(strsummary, flush=True )
+
+
+
+
 
 def image_summary(data):
     print(np.min(data), np.max(data), data.shape)

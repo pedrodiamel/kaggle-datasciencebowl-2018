@@ -445,6 +445,7 @@ def image_to_array(image, channels=None):
 def resize_image(image, height, width,
                  channels=None,
                  resize_mode=None,
+                 interp = 'bilinear',
                  ):
     """
     Resizes an image and returns it as a np.array
@@ -472,12 +473,13 @@ def resize_image(image, height, width,
         return image
 
     # Resize
-    interp = 'bilinear'
+    #interp = 'bilinear'
 
     width_ratio = float(image.shape[1]) / width
     height_ratio = float(image.shape[0]) / height
     if resize_mode == 'squash' or width_ratio == height_ratio:
         return scipy.misc.imresize(image, (height, width), interp=interp)
+        
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
         if width_ratio > height_ratio:

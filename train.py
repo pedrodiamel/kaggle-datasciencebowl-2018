@@ -6,9 +6,9 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import torch.backends.cudnn as cudnn
 
-from deep.datasets import dsxbdata 
-from deep.datasets import dsxbtransform as dsxbtrans
-from deep import neuralnet as nnet
+from torchlib.datasets import dsxbdata 
+from torchlib.datasets import dsxbtransform as dsxbtrans
+from torchlib import neuralnet as nnet
 
 from argparse import ArgumentParser
 import datetime

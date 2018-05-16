@@ -12,7 +12,6 @@ import operator
 
 from . import utility as utl
 
-
 trainfile='stage1_train'
 testfile='stage1_test'
 testfilefinal='stage2_test_final'
@@ -63,7 +62,7 @@ class dataProvide(object):
         else:
             raise ValueError('Image mode "%s" not supported' % image.mode);
         
-        return image;
+        return  image;
     
 
 class dsxbExProvide(dataProvide):

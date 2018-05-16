@@ -161,14 +161,19 @@ class SynteticCircleDataset(Dataset):
             self.btouch
             )
 
-        mask = masks.max(0)
+        edges = utility.get_edges( masks )
+        btouchs = utility.get_touchs( edges )  
+        bmask  = utility.tolabel(masks)
+
         #weight = wmap.getweightmap( mask )     
-        weight = wmap.getunetweightmap(mask, masks )
+        weight = wmap.getunetweightmap(bmask, masks )
         
+        h,w = image.shape[:2]
         image_t = image
-        label_t = np.zeros( (mask.shape[0], mask.shape[1], 2) )
-        label_t[:,:,0] = (mask <= 0).astype( np.uint8 )
-        label_t[:,:,1] = (mask > 0).astype( np.uint8 )
+        label_t = np.zeros( (h,w, 3) )
+        label_t[:,:,0] = (bmask <= 0).astype( np.uint8 )
+        label_t[:,:,1] = (bmask > 0).astype( np.uint8 )
+        label_t[:,:,2] = (btouchs > 0).astype( np.uint8 )
         weight_t = weight
 
         #label_t = label_t[:,:,np.newaxis] 
