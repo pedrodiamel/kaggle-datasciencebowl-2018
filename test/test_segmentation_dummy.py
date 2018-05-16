@@ -40,7 +40,7 @@ opt='adam'
 scheduler='fixed'
 finetuning=False
 nepoch=5
-size_input=284
+size_input=50
 
 network = SegmentationNeuralNet(
         patchproject=project,
@@ -90,7 +90,6 @@ dataloader_test = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 
 
 network.evaluate(dataloader_train, epoch=0)
-
 for epoch in range(nepoch):
     
     print('\nEpoch: {}/{} ({}%)'.format(epoch, nepoch, int((float(epoch)/nepoch)*100) ) )
