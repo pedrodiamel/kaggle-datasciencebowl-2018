@@ -270,8 +270,6 @@ class ObjectImageTransform(ObjectTransform):
              }
 
 
-        
-
 
 class ObjectImageAndMaskTransform(ObjectTransform):
     def __init__(self, image, mask ):
