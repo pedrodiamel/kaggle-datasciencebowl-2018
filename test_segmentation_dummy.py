@@ -38,6 +38,7 @@ opt='adam'
 scheduler='fixed'
 finetuning=False
 nepoch=5
+size_input=284
 
 network = SegmentationNeuralNet(
         patchproject=project,
@@ -59,7 +60,7 @@ network.create(
         optimizer=opt,
         lrsch=scheduler,
         pretrained=finetuning,
-        
+        size_input=size_input
         )
 
 print(network)
@@ -68,14 +69,18 @@ data = SynteticCircleDataset(
         count=100,
         imsize=(250,250),
         sigma=0.01,
-        bdraw_grid=True,
+        bdraw_grid=False,
         transform=transforms.Compose([
-              mtrans.ToResizeUNetFoV(100, cv2.BORDER_CONSTANT),
+              mtrans.ToResizeUNetFoV(size_input, cv2.BORDER_CONSTANT),
               mtrans.ToRandomTransform( mtrans.ToGaussianBlur(), prob=0.5 ),                                         
               mtrans.ToTensor(),
               mtrans.ToNormalization(),
             ])
         )
+
+sample = data[0]
+for k,v in sample.items():
+    print( k, ':', v.shape, v.min(), v.max() )
 
 dataloader_train = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 dataloader_val = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
@@ -83,7 +88,6 @@ dataloader_test = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 
 
 network.evaluate(dataloader_train, epoch=0)
-
 
 for epoch in range(nepoch):
     

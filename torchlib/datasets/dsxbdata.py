@@ -16,7 +16,6 @@ warnings.filterwarnings("ignore")
 
 from . import imageutl as imutl
 
-
 train = 'train'
 validation = 'val'
 test  = 'test'

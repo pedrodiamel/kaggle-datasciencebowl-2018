@@ -357,7 +357,8 @@ class SegmentationNeuralNet(AbstractNeuralNet):
         parallel=False,
         seed=1,
         print_freq=10,
-        gpu=0
+        gpu=0,
+        view_freq=1
         ):
         """
         Initialization
@@ -368,9 +369,11 @@ class SegmentationNeuralNet(AbstractNeuralNet):
             -seed (int)
             -print_freq (int)
             -gpu (int)
+            -view_freq (in epochs)
         """
 
         super(SegmentationNeuralNet, self).__init__( patchproject, nameproject, no_cuda, parallel, seed, print_freq, gpu  )
+        self.view_freq = view_freq
 
  
     def create(self, 
@@ -384,7 +387,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
         lrsch,          
         pretrained=False,
         size_input=388,
-        
+
         ):
         """
         Create            
@@ -537,9 +540,8 @@ class SegmentationNeuralNet(AbstractNeuralNet):
             )
 
         #vizual_freq
-        if epoch % 10 == 0:
+        if epoch % view_freq == 0:
             
-            ws,hw = 100,100
             prob = F.softmax(outputs,dim=1)
             prob = prob.data[0]
             _,maxprob = torch.max(prob,0)
