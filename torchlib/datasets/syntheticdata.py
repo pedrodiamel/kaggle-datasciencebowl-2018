@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from ..transforms.render import ColorCheckerRender, CircleRender, EllipseRender
-from ..transforms.aumentation import ObjectImageMaskAndWeightTransform
+from ..transforms.aumentation import ObjectImageMaskAndWeightTransform, ObjectImageTransform, ObjectImageAndMaskTransform, ObjectTransform
 
 from . import imageutl as imutl
 from . import weightmaps as wmap
@@ -68,7 +68,7 @@ class SyntheticColorCheckerDataset(Dataset):
             sample = self.transform(sample)
         return sample
 
-class SynteticColorCheckerExDataset(Dataset):
+class SyntheticColorCheckerExDataset(Dataset):
     '''
     Mnagement for Synthetic Color Checker dataset
     '''
@@ -118,13 +118,19 @@ class SynteticColorCheckerExDataset(Dataset):
             sample = self.transform(sample)
         return sample
 
-class SynteticCircleDataset(Dataset):
+class SyntethicCircleDataset(Dataset):
     '''
     Mnagement for Synthetic Circle dataset
     '''
 
+    generate_image = 'image'
+    generate_image_and_mask = 'image_and_mask' 
+    generate_image_mask_and_weight = 'image_mask_and_weight' 
+
+
     def __init__(self, 
         count=100,
+        generate='image',
         cnt=5,
         imsize=(512, 512),
         rmin=5, rmax=50,
@@ -134,10 +140,14 @@ class SynteticCircleDataset(Dataset):
         bdraw_grid=False,
         transform=None,
         ):
-        """           
+        """Initialization
+        Args:
+            @count: for batch size         
+            @generate
         """            
         
         self.ren = CircleRender();
+
         self.count = count
         self.imsize= imsize
         self.cnt = cnt
@@ -148,6 +158,7 @@ class SynteticCircleDataset(Dataset):
         self.btouch = btouch
         self.transform = transform 
         self.bdraw_grid = bdraw_grid
+        self.generate = generate
     
 
     def __len__(self):
@@ -179,7 +190,15 @@ class SynteticCircleDataset(Dataset):
         #label_t = label_t[:,:,np.newaxis] 
         weight_t = weight[:,:,np.newaxis] 
 
-        obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
+        if self.generate == 'image':
+            obj = ObjectTransform( image_t  )
+        elif self.generate == 'image_and_mask':
+            obj = ObjectImageAndMaskTransform( image_t, label_t  )
+        elif self.generate == 'image_mask_and_weight':
+            obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
+        else: 
+            assert(False) 
+        
 
         if self.bdraw_grid:
             obj._draw_grid( grid_size=50 )

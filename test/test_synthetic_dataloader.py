@@ -23,6 +23,7 @@ from torchlib import visualization as view
 
 data = SynteticCircleDataset(
         count=100,
+        generate=SynteticCircleDataset.generate_image_mask_and_weight,
         imsize=(512,512),
         sigma=0.01,
         bdraw_grid=True,
@@ -30,9 +31,9 @@ data = SynteticCircleDataset(
 
               ## resize and crop
                            
-              mtrans.ToResize( (200,200), resize_mode='crop' ) ,
+              mtrans.ToResize( (400,400), resize_mode='crop' ) ,
               #mtrans.CenterCrop( (200,200) ),
-              #trans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
+              mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
               #mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT_101),
               
               ## color 
