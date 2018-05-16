@@ -203,14 +203,14 @@ class ObjectTransform(object):
     def applay_elastic_transform(self, mapx, mapy, padding_mode = cv2.BORDER_CONSTANT):        
         self.image  = cv2.remap(self.image,  mapx, mapy, cv2.INTER_LINEAR, borderMode=padding_mode)
 
-
     def applay_elastic_tensor_transform(self, grid):
         tensor = torch.unsqueeze( self.image, dim=0 )
         self.image = grid_sample(tensor, grid ).data[0,...]  
 
     ### resize
-    def resize(self, imsize):
-        self.image = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
+    def resize(self, imsize, resize_mode):
+        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+
 
     ### resize unet input
     def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
@@ -356,9 +356,10 @@ class ObjectImageAndMaskTransform(ObjectTransform):
 
 
     ### resize
-    def resize(self, imsize):
-        self.image = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
-        self.mask = cv2.resize(self.mask, imsize , interpolation=cv2.INTER_NEAREST ) 
+    def resize(self, imsize, resize_mode):
+        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
+
 
     #geometric transformation
     def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
@@ -425,7 +426,6 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
 
         return False
 
-
     def scale( self, factor, padding_mode = cv2.BORDER_CONSTANT ):
         self.image = F.scale( self.image, factor, cv2.INTER_LINEAR, padding_mode )
         self.mask = F.scale( self.mask, factor, cv2.INTER_NEAREST, padding_mode )
@@ -467,7 +467,6 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
         self.mask  = cv2.remap(self.mask,  mapx, mapy, cv2.INTER_NEAREST, borderMode=padding_mode)
         self.weight  = cv2.remap(self.weight,  mapx, mapy, cv2.INTER_LINEAR, borderMode=padding_mode)
 
-
     def applay_elastic_tensor_transform(self, grid):
         self.image = grid_sample( torch.unsqueeze( self.image, dim=0 ), grid ).data[0,...]
         self.mask = grid_sample( torch.unsqueeze( self.mask, dim=0 ), grid ).round().data[0,...]
@@ -475,10 +474,11 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
 
 
     ### resize
-    def resize(self, imsize):
-        self.image  = cv2.resize(self.image, imsize , interpolation=cv2.INTER_LINEAR ) 
-        self.mask   = cv2.resize(self.mask, imsize , interpolation=cv2.INTER_NEAREST ) 
-        self.weight = cv2.resize(self.weight, imsize , interpolation=cv2.INTER_NEAREST )
+    def resize(self, imsize, resize_mode):
+        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
+        self.weight = F.resize_image(self.weight, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR )
+
 
     def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):
         super(ObjectImageMaskAndWeightTransform, self).resize_unet_input(fov_size, padding_mode)

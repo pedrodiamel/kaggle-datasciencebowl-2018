@@ -347,6 +347,25 @@ class ToNormalization(ToTransform):
 
 # geometrical transforms
 
+
+class ToResize(ToTransform):
+    """Resize to unet fov
+    """
+    
+    def __init__(self, imsize, resize_mode=None ):
+        """Initialization
+        Args:
+            @imsize: size input layer resize (w,h)
+            @resize_mode: resize mode
+        """
+        self.imsize = imsize
+        self.resize_mode = resize_mode
+
+    def __call__(self, obj):
+        obj.resize( self.imsize, self.resize_mode )
+        return obj
+
+
 class ToResizeUNetFoV(ToTransform):
     """Resize to unet fov
     """
@@ -362,9 +381,6 @@ class ToResizeUNetFoV(ToTransform):
     def __call__(self, obj):
         obj.resize_unet_input( self.fov, self.padding_mode )
         return obj
-    
-
-
 
 class CenterCrop(ToTransform):
     """Center Crop
@@ -384,7 +400,6 @@ class CenterCrop(ToTransform):
         y = (h - self.cropsize[1]) // 2
         obj.crop( [ x, y, self.cropsize[0], self.cropsize[1] ], self.padding_mode )
         return obj
-    
 
 class RandomCrop(ToTransform):
     """Random Crop

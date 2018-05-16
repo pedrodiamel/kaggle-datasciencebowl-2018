@@ -302,8 +302,6 @@ def square_resize(image, newsize, interpolate_mode, padding_mode):
     image = cunsqueeze(image)
     return image
 
-
-
 def draw_grid(imgrid, grid_size=50, color=(255,0,0), thickness=1):
     
     m,n = imgrid.shape[:2]
@@ -313,7 +311,6 @@ def draw_grid(imgrid, grid_size=50, color=(255,0,0), thickness=1):
     for j in range(0, m-1, grid_size):
         cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
     return imgrid
-
 
 def resize_unet_transform(image, size, interpolate_mode, padding_mode): 
     
@@ -356,7 +353,6 @@ def resize_unet_transform(image, size, interpolate_mode, padding_mode):
 
     return image
 
-
 def ffftshift2(h):    
     H = np.fft.fft2(h)
     H = np.abs( np.fft.fftshift( H ) )
@@ -368,7 +364,6 @@ def norm_fro(a,b):
 def complex2vector(c):
     '''complex to vector'''    
     return np.concatenate( ( c.real, c.imag ) , axis=1 )
-
 
 def image_to_array(image, channels=None):
     """
@@ -442,16 +437,17 @@ def image_to_array(image, channels=None):
 
     return image
 
-def resize_image(image, height, width,
+
+def resize_image( image, height, width,
                  channels=None,
                  resize_mode=None,
-                 interp = 'bilinear',
+                 interpolate_mode=cv2.INTER_LINEAR, 
                  ):
     """
     Resizes an image and returns it as a np.array
 
     Arguments:
-    image -- a PIL.Image or numpy.ndarray
+    image --  numpy.ndarray
     height -- height of new image
     width -- width of new image
 
@@ -467,7 +463,7 @@ def resize_image(image, height, width,
 
     # convert to array
     image = image_to_array(image, channels)
-
+    
     # No need to resize
     if image.shape[0] == height and image.shape[1] == width:
         return image
@@ -478,7 +474,9 @@ def resize_image(image, height, width,
     width_ratio = float(image.shape[1]) / width
     height_ratio = float(image.shape[0]) / height
     if resize_mode == 'squash' or width_ratio == height_ratio:
-        return scipy.misc.imresize(image, (height, width), interp=interp)
+        image = cv2.resize(image, (width, height) , interpolation = interpolate_mode)
+        image = cunsqueeze(image)
+        return image
         
     elif resize_mode == 'crop':
         # resize to smallest of ratios (relatively larger image), keeping aspect ratio
@@ -488,7 +486,9 @@ def resize_image(image, height, width,
         else:
             resize_width = width
             resize_height = int(round(image.shape[0] / width_ratio))
-        image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+        image = cv2.resize(image, (resize_width, resize_height) , interpolation = interpolate_mode) 
+        image = cunsqueeze(image)
+        
 
         # chop off ends of dimension that is still too long
         if width_ratio > height_ratio:
@@ -510,7 +510,9 @@ def resize_image(image, height, width,
                 resize_width = int(round(image.shape[1] / height_ratio))
                 if (width - resize_width) % 2 == 1:
                     resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = cv2.resize(image, (resize_width, resize_height) , interpolation = interpolate_mode) 
+            image = cunsqueeze(image)
+
         elif resize_mode == 'half_crop':
             # resize to average ratio keeping aspect ratio
             new_ratio = (width_ratio + height_ratio) / 2.0
@@ -520,7 +522,9 @@ def resize_image(image, height, width,
                 resize_height += 1
             elif width_ratio < height_ratio and (width - resize_width) % 2 == 1:
                 resize_width += 1
-            image = scipy.misc.imresize(image, (resize_height, resize_width), interp=interp)
+            image = cv2.resize(image, (resize_width, resize_height) , interpolation = interpolate_mode) 
+            image = cunsqueeze(image)
+
             # chop off ends of dimension that is still too long
             if width_ratio > height_ratio:
                 start = int(round((resize_width - width) / 2.0))

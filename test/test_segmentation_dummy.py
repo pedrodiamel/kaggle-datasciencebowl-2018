@@ -21,6 +21,7 @@ from torchlib.datasets import utility as utl
 
 from torchlib.transforms import transforms as mtrans
 from torchlib import visualization as view
+from torchlib.logger import summary
 
 
 project='out/netruns'
@@ -40,7 +41,7 @@ opt='adam'
 scheduler='fixed'
 finetuning=False
 nepoch=5
-size_input=50
+size_input=100
 
 network = SegmentationNeuralNet(
         patchproject=project,
@@ -66,6 +67,7 @@ network.create(
         )
 
 print(network)
+#summary(network.net)
 
 data = SynteticCircleDataset(
         count=100,
@@ -83,6 +85,8 @@ data = SynteticCircleDataset(
 sample = data[0]
 for k,v in sample.items():
     print( k, ':', v.shape, v.min(), v.max() )
+print('\n')
+#assert(False)
 
 dataloader_train = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 dataloader_val = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )

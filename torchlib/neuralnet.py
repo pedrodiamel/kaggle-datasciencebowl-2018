@@ -540,7 +540,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
             )
 
         #vizual_freq
-        if epoch % view_freq == 0:
+        if epoch % self.view_freq == 0:
             
             prob = F.softmax(outputs,dim=1)
             prob = prob.data[0]
@@ -676,6 +676,8 @@ class SegmentationNeuralNet(AbstractNeuralNet):
 
         if arch == 'unet':
             self.net = nnmodels.unet( num_classes = num_output_channels )  
+        elif arch == 'simpletsegnet':
+            self.net = nnmodels.simpletsegnet( num_classes = num_output_channels, num_channels=num_input_channels )  
         elif arch == 'unet11':
             self.net = nnmodels.unet11( num_classes = num_output_channels ) 
         elif arch == 'dunet':
