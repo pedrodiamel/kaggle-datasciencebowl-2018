@@ -72,7 +72,7 @@ for i_batch, sample_batched in enumerate(dataloader):
     plt.ioff()
 
     plt.subplot(122)
-    plt.imshow( label, cmap='gray' ) #
+    plt.imshow( label ) #cmap='gray'
     plt.axis('off')
     plt.ioff()
 
