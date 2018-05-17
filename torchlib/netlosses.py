@@ -208,8 +208,7 @@ class Dice(nn.Module):
     
     def __init__(self, bback_ignore=True):
         super(Dice, self).__init__()
-        self.bback_ignore = bback_ignore        
-
+        self.bback_ignore = bback_ignore       
 
     def forward(self, y_pred, y_true ):
         

@@ -104,7 +104,7 @@ def mpostprocess(score):
 
     labels = clean_label( labels )
     labels = create_label(labels )
-    labels = decompose( labels )
+    #labels = decompose( labels )
 
     return labels
 
@@ -118,7 +118,8 @@ def mpostprocessthresh(score, prob=0.5):
     labels = decompose(labels)
     labels = clean_label( labels )
     labels = create_label(labels )
-    labels = decompose( labels )
+    #labels = decompose( labels )
+    #labels = predition
 
     return labels
 
@@ -126,11 +127,13 @@ def mpostprocessmax(score):
     
     predition = np.argmax(score[:,:,:3], axis=2).astype('uint8') 
     predition = predition == 1
+    
     labels, _ = ndi.label(predition)
     labels = decompose(labels)
     labels = clean_label( labels )
     labels = create_label(labels )
-    labels = decompose( labels )
+    #labels = decompose( labels )
+    #labels = predition
 
     return labels
 

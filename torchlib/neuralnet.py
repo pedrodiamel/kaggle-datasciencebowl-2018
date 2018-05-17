@@ -22,6 +22,8 @@ from . import netmodels as nnmodels
 from . import netlearningrate
 from . import netlosses as nloss
 from . import graphic as gph
+from . import torchutls as nutl
+
 from .logger import Logger, AverageFilterMeter, AverageMeter
 
 
@@ -140,7 +142,8 @@ class AbstractNeuralNet(object):
     def fit( self, train_loader, val_loader, epochs=100, snapshot=10 ):
 
         best_prec = 0
-        print('Epoch: {}/{}'.format(self.start_epoch, epochs))
+        print('\nEpoch: {}/{}(0%)'.format(self.start_epoch, epochs))
+        print('-' * 25)
 
         self.evaluate(val_loader, epoch=self.start_epoch)        
         for epoch in range(self.start_epoch, epochs):       
@@ -433,7 +436,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
             batch_size = inputs.size(0)
 
             if self.cuda:
-                targets = targets.cuda(non_blocking=True, async=True)
+                targets = targets.cuda(non_blocking=True)
                 inputs_var  = Variable(inputs.cuda(),  requires_grad=False)
                 targets_var = Variable(targets.cuda(), requires_grad=False)
                 weights_var = Variable(weights.cuda(), requires_grad=False)
@@ -489,7 +492,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
                 batch_size = inputs.size(0)
 
                 if self.cuda:
-                    targets = targets.cuda( non_blocking=True, async=True )
+                    targets = targets.cuda( non_blocking=True )
                     inputs_var  = Variable(inputs.cuda(),  requires_grad=False, volatile=True)
                     targets_var = Variable(targets.cuda(), requires_grad=False, volatile=True)
                     weights_var = Variable(weights.cuda(), requires_grad=False, volatile=True)
@@ -572,7 +575,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
                 
                 # get data (image, label)
                 inputs  = sample['image']      
-                targets = nutl.argmax(sample['labels']) if bgt else np.zeros( (inputs.shape[0]) )                     
+                targets = sample['label'] if bgt else np.zeros( (inputs.shape) )                     
                 Id = sample['id'] if not bgt else np.zeros( (inputs.shape[0]) ) 
                 
                 x = inputs.cuda() if self.cuda else inputs    
@@ -604,7 +607,7 @@ class SegmentationNeuralNet(AbstractNeuralNet):
         # switch to evaluate mode
         self.net.eval()
         with torch.no_grad():
-            x = inputs.cuda() if self.cuda else inputs    
+            x = image.cuda() if self.cuda else image    
             x  = Variable(x, requires_grad=False, volatile=True )
             msoft = nn.Softmax()
             yhat = msoft( self.net(x) )

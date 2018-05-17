@@ -199,7 +199,6 @@ class SyntethicCircleDataset(Dataset):
         else: 
             assert(False) 
         
-
         if self.bdraw_grid:
             obj._draw_grid( grid_size=50 )
 
