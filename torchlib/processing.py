@@ -36,7 +36,7 @@ def unet_transform_image_size(image, size=388):
     
     downsampleFactor = 16;
     d4a_size= 0;
-    padInput =   (((d4a_size *2 +2 +2)*2 +2 +2)*2 +2 +2)*2 +2 +2;
+    padInput = (((d4a_size *2 +2 +2)*2 +2 +2)*2 +2 +2)*2 +2 +2;
     padOutput = ((((d4a_size -2 -2)*2-2 -2)*2-2 -2)*2-2 -2)*2-2 -2;
     d4a_size = math.ceil( (size - padOutput)/downsampleFactor);
     input_size = downsampleFactor*d4a_size + padInput;
@@ -264,13 +264,9 @@ class Net(object):
         print(image_r.shape)
         
         return image_r
-   
-        
+           
     def _tiled_forward( self, data, n_tilesx=2, n_tilesy=2 ):
     
-        # n_tilesx = self.n_tilesx
-        # n_tilesy = self.n_tilesy
-
         padOutput = self.padOutput
         padInput  = self.padInput
         downsampleFactor = self.downsampleFactor

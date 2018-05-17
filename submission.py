@@ -98,8 +98,7 @@ if __name__ == '__main__':
     segment.loadmodel(pathnamemodel)
 
 
-    print('>> processing ...')
-    
+    print('>> processing ...')    
     rles = pipeline(dataloader, segment, frec_iter);
     submission = pd.DataFrame(rles).astype(str)
     submission = submission[submission['EncodedPixels']!='nan']

@@ -603,12 +603,12 @@ class SegmentationNeuralNet(AbstractNeuralNet):
         
         # switch to evaluate mode
         self.net.eval()
-        x = inputs.cuda() if self.cuda else inputs    
-        x  = Variable(x, requires_grad=False, volatile=True )
-
-        msoft = nn.Softmax()
-        yhat = msoft(self.net(x))
-        yhat = nutl.to_np(yhat)
+        with torch.no_grad():
+            x = inputs.cuda() if self.cuda else inputs    
+            x  = Variable(x, requires_grad=False, volatile=True )
+            msoft = nn.Softmax()
+            yhat = msoft( self.net(x) )
+            yhat = nutl.to_np(yhat).transpose(2,3,1,0)[...,0]
 
         return yhat
 

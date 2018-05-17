@@ -24,7 +24,7 @@ from torchlib import visualization as view
 from torchlib.logger import summary
 
 
-project='out/netruns'
+project='../out/netruns'
 name='test_001'
 no_cuda=True
 parallel=False

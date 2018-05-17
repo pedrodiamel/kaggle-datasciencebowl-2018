@@ -7,8 +7,9 @@ from torchvision import transforms, utils
 import torch.backends.cudnn as cudnn
 
 from torchlib.datasets import dsxbdata 
-from torchlib.datasets import dsxbtransform as dsxbtrans
-from torchlib import neuralnet as nnet
+from torchlib.neuralnet import SegmentationNeuralNet
+from torchlib.transforms import transforms as mtrans
+
 
 from argparse import ArgumentParser
 import datetime
@@ -67,12 +68,14 @@ def arg_parser():
 def main():
     
     # parameters
-    parser = arg_parser();
-    args = parser.parse_args();
-    imsize = args.image_size;
-    parallel=args.parallel;
+    parser = arg_parser()
+    args = parser.parse_args()
+    imsize = args.image_size
+    parallel=args.parallel
+    num_classes=3
+    num_channels=3
 
-    network = nnet.Network(
+    network = SegmentationNeuralNet(
         patchproject=args.project,
         nameproject=args.name,
         no_cuda=args.no_cuda,
@@ -84,13 +87,15 @@ def main():
         
     network.create( 
         arch=args.arch, 
-        num_classes=3, 
+        num_output_channels=num_classes, 
+        num_input_channels=num_channels,
         loss=args.loss, 
         lr=args.lr, 
         momentum=args.momentum,
-        opt=args.opt,
+        optimizer=args.opt,
         lrsch=args.scheduler,
         pretrained=args.finetuning
+        size_input=imsize
         )
     
     # resume
@@ -103,14 +108,11 @@ def main():
         args.data, 
         dsxbdata.train, 
         transform=transforms.Compose([
-            #dsxbtrans.ElasticDistort(size_grid=50, deform=15),
-            dsxbtrans.GeometricDistort(angle=360, translation=0.2, warp=0.0),
-            dsxbtrans.RandomCrop( cropsize=(250,250) ),
-            dsxbtrans.ColorDistort(),
-            dsxbtrans.UnetResize(imsize=imsize),            
-            dsxbtrans.ToTensor(),
-            dsxbtrans.ElasticTorchDistort(size_grid=10, deform=0.05),
-            dsxbtrans.Normalize(), 
+            mtrans.ToResize( (500,500), resize_mode='crop' ) ,
+            mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_CONSTANT  ),
+            mtrans.ToResizeUNetFoV(imsize, cv2.BORDER_REFLECT_101),
+            mtrans.ToTensor(),
+            mtrans.ToNormalization(),
             ])
         )
 
@@ -122,14 +124,11 @@ def main():
         args.data, 
         dsxbdata.test, 
         transform=transforms.Compose([
-            #dsxbtrans.ElasticDistort(size_grid=50, deform=15),
-            dsxbtrans.GeometricDistort(angle=360, translation=0.2, warp=0.0),
-            dsxbtrans.RandomCrop( cropsize=(250,250) ),
-            dsxbtrans.ColorDistort(),
-            dsxbtrans.UnetResize(imsize=imsize),            
-            dsxbtrans.ToTensor(),
-            dsxbtrans.ElasticTorchDistort(size_grid=10, deform=0.05),
-            dsxbtrans.Normalize(), 
+            mtrans.ToResize( (500,500), resize_mode='crop' ) ,
+            mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_CONSTANT  ),
+            mtrans.ToResizeUNetFoV(imsize, cv2.BORDER_REFLECT_101),
+            mtrans.ToTensor(),
+            mtrans.ToNormalization(), 
             ])
         )
 
@@ -137,31 +136,12 @@ def main():
         num_workers=args.workers, pin_memory=network.cuda, drop_last=False)
        
     # print neural net class
-    print('SEGTorch: {}'.format(datetime.datetime.now()) )
+    print('SEG-Torch: {}'.format(datetime.datetime.now()) )
     print(network)
 
-    # initialization evaluate
-    network.evaluate(val_loader, epoch=network.start_epoch)
-
-
-    best_prec = 0
-    for epoch in range(network.start_epoch, args.epochs):       
-
-        network.adjust_learning_rate(epoch)     
-        network.training(train_loader, epoch)
-
-        print('Epoch: {}/{}'.format(epoch,args.epochs))
-
-        prec = network.evaluate(val_loader, epoch+1)            
-
-        # remember best prec@1 and save checkpoint
-        is_best = prec > best_prec
-        best_prec = max(prec, best_prec)
-
-        if epoch % args.snapshot == 0 or is_best:
-            network.save(epoch, best_prec, is_best, 'chk{:06d}.pth.tar'.format(epoch))
-        
-        
+    # training neural net
+    network.fit( train_loader, val_loader, args.epochs, args.snapshot )
+    
                
     print("Optimization Finished!")
     print("DONE!!!")
