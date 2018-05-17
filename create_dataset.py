@@ -5,10 +5,10 @@ import numpy as np
 from skimage import color
 import scipy.misc
 
-from deep.datasets import imageutl as imutl
-from deep.datasets import utility as utl
-from deep.datasets import weightmaps 
-from deep import preprocessing as prep
+from torchlib.datasets import imageutl as imutl
+from torchlib.datasets import utility as utl
+from torchlib.datasets import weightmaps 
+from torchlib import preprocessing as prep
 
 from argparse import ArgumentParser
 import datetime

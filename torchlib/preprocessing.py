@@ -15,7 +15,7 @@ from scipy import ndimage
 import skimage.morphology as morph
 import skfmm
 
-from deep.datasets import weightmaps 
+from .datasets import weightmaps 
 
 def tolabel( x ):
     return (np.max(x,axis=0)>0) 
@@ -113,25 +113,13 @@ def size_transform(imagein, size=512, mode=None):
 
 def create_groundtruth(masks):
     
-    edges = np.array([ morph.binary_dilation(get_contour(x)) for x in masks ])   
-    #edges = np.array([ (get_contour(x)) for x in masks ]) 
-    
+    edges = np.array([ morph.binary_dilation(get_contour(x)) for x in masks ])       
     bmask = tolabel(masks)  
-    bedge = tolabel(edges)   
-    
+    bedge = tolabel(edges)       
     btouch   = get_touchs( edges )
     bcontour = tolabel(edges)
-
     centers  = np.array([ morph.binary_dilation(get_center(x)) for x in masks ]) 
     bcenters = tolabel(centers)   
-    
-    bmask = bmask*(~btouch)
-    #bmask = bmask*(~bcontour)
-    
-    # label = np.zeros((bmask.shape[0],bmask.shape[1],3))
-    # label[:,:,0] = bmask
-    # label[:,:,1] = bcontour #btouch
-    # label[:,:,2] = bcenters
     
     return bmask, bcontour, btouch, bcenters
 
@@ -163,7 +151,7 @@ def preprocessing(image, label, imsize=250, bcrop=False):
     # preprocessing
     # image =  color.rgb2gray(image)
     bmask, bcontour, btouch, bcenters = create_groundtruth(masks)
-    weight = weightmaps.getunetweightmap( bmask + 2*btouch  , masks, w0=10, sigma=5, )
+    weight = weightmaps.getunetweightmap( bmask + 2*btouch, masks, w0=10, sigma=5, )
 
     # resize
     #image_t   = size_transform(image,  size=imsize, mode=None)

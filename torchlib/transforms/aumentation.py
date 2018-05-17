@@ -209,7 +209,7 @@ class ObjectTransform(object):
 
     ### resize
     def resize(self, imsize, resize_mode):
-        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+        self.image = F.resize_image(self.image, imsize[1], imsize[0], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
 
 
     ### resize unet input
@@ -355,8 +355,8 @@ class ObjectImageAndMaskTransform(ObjectTransform):
 
     ### resize
     def resize(self, imsize, resize_mode):
-        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
-        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
+        self.image = F.resize_image(self.image, imsize[1], imsize[0],  resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0],  resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
 
 
     #geometric transformation
@@ -473,9 +473,9 @@ class ObjectImageMaskAndWeightTransform(ObjectImageAndMaskTransform):
 
     ### resize
     def resize(self, imsize, resize_mode):
-        self.image = F.resize_image(self.image, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
-        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
-        self.weight = F.resize_image(self.weight, imsize[1], imsize[0], self.image.shape[2], resize_mode, interpolate_mode=cv2.INTER_LINEAR )
+        self.image = F.resize_image(self.image, imsize[1], imsize[0],  resize_mode, interpolate_mode=cv2.INTER_LINEAR ) 
+        self.mask  = F.resize_image(self.mask, imsize[1], imsize[0],  resize_mode, interpolate_mode=cv2.INTER_NEAREST ) 
+        self.weight = F.resize_image(self.weight, imsize[1], imsize[0],  resize_mode, interpolate_mode=cv2.INTER_LINEAR )
 
 
     def resize_unet_input( self, fov_size=388, padding_mode = cv2.BORDER_CONSTANT ):

@@ -45,10 +45,11 @@ def relabel( mask ):
 
 def scale(image, factor, mode, padding_mode ): 
 
-    h,w = image.shape[:2]
-    image = cv2.resize(image, None, fx=factor, fy=factor, interpolation=mode ) 
-    image = cunsqueeze(image)
-    hn, wn = image.shape[:2]
+    img = np.copy(image)
+    h,w = img.shape[:2]
+    img = cv2.resize(img, None, fx=factor, fy=factor, interpolation=mode ) 
+    img = cunsqueeze(img)
+    hn, wn = img.shape[:2]
     borderX = float( abs(wn-w) )/2.0
     borderY = float( abs(hn-h) )/2.0
     padxL = int(np.floor( borderY ))
@@ -56,10 +57,10 @@ def scale(image, factor, mode, padding_mode ):
     padyT = int(np.floor( borderX ))
     padyB = int(np.ceil(  borderX ))
 
-    if sxy < 1:  image = cv2.copyMakeBorder(image, padxL, padxR, padyT, padyB, borderType=padding_mode)
-    else: image = image[ padyT:padyT+h, padxL:padxL+w, : ]
+    if sxy < 1:  img = cv2.copyMakeBorder(img, padxL, padxR, padyT, padyB, borderType=padding_mode)
+    else: img = img[ padyT:padyT+h, padxL:padxL+w, : ]
 
-    image = cunsqueeze(image)    
+    img = cunsqueeze(img)    
     return image
 
 def hflip( x ): 
@@ -80,8 +81,9 @@ def rotate270( x ):
 def is_box_inside(img, box ):
     return box[0] < 0 or box[1] < 0 or box[2]+box[0] >= img.shape[1] or box[3]+box[1] >= img.shape[0]
 
-def pad_img_to_fit_bbox(img, box, padding_mode):
+def pad_img_to_fit_bbox(image, box, padding_mode):
     
+    img = np.copy(image)
     x1,y1,x2,y2 = box
     x2 = x1+x2; y2 = y1+y2
 
@@ -110,11 +112,12 @@ def imcrop( image, box, padding_mode ):
         @image
         @box: [x,y,w,h]
     """    
-    h, w, c = image.shape
-    if is_box_inside(image, box):
-        image, box = pad_img_to_fit_bbox(image, box, padding_mode)    
+    img = np.copy(image)
+    h, w, c = img.shape
+    if is_box_inside(img, box):
+        img, box = pad_img_to_fit_bbox(img, box, padding_mode)    
     x, y, new_w, new_h = box
-    imagecrop = image[y:y + new_h, x:x + new_w, : ]   
+    imagecrop = img[y:y + new_h, x:x + new_w, : ]   
     imagecrop = cunsqueeze(imagecrop)
 
     return imagecrop
@@ -282,8 +285,9 @@ def applay_geometrical_transform( image, mat_r, mat_t, mat_w, interpolate_mode, 
     image = cunsqueeze(image)
     return image
 
-def square_resize(image, newsize, interpolate_mode, padding_mode):
+def square_resize(img, newsize, interpolate_mode, padding_mode):
     
+    image = np.copy(img)
     w, h, channels = image.shape; 
     if w == h: return image  
 
@@ -312,8 +316,9 @@ def draw_grid(imgrid, grid_size=50, color=(255,0,0), thickness=1):
         cv2.line(imgrid, (0, j+grid_size), (n, j+grid_size), color=color, thickness=thickness)
     return imgrid
 
-def resize_unet_transform(image, size, interpolate_mode, padding_mode): 
+def resize_unet_transform(img, size, interpolate_mode, padding_mode): 
     
+    image = np.copy(img)
     height, width, ch = image.shape
     
     #unet required input size
@@ -437,15 +442,13 @@ def image_to_array(image, channels=None):
 
     return image
 
-
-def resize_image( image, height, width,
-                 channels=None,
+def resize_image( img, height, width,
                  resize_mode=None,
                  interpolate_mode=cv2.INTER_LINEAR, 
                  ):
     """
     Resizes an image and returns it as a np.array
-
+    
     Arguments:
     image --  numpy.ndarray
     height -- height of new image
@@ -462,8 +465,10 @@ def resize_image( image, height, width,
         raise ValueError('resize_mode "%s" not supported' % resize_mode)
 
     # convert to array
-    image = image_to_array(image, channels)
+    image = np.copy(img)
+    #image = image_to_array(image, channels)
     
+
     # No need to resize
     if image.shape[0] == height and image.shape[1] == width:
         return image

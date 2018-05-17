@@ -16,7 +16,6 @@ sys.path.append('../')
 from torchlib.datasets.syntheticdata import SynteticCircleDataset
 from torchlib.datasets import imageutl as imutl
 from torchlib.datasets import utility as utl
-
 from torchlib.transforms import transforms as mtrans
 from torchlib import visualization as view
 

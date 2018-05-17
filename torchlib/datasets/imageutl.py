@@ -80,7 +80,7 @@ class dsxbExProvide(dataProvide):
         folders_weights='weights',
         ext='png',
         ):
-        super(dataProvide, self).__init__( );
+        super(dsxbExProvide, self).__init__( );
 
         self.path = base_folder
         self.subpath = sub_folder
@@ -166,7 +166,7 @@ class dsxbProvide(dataProvide):
         folders_masks='masks',
         train=True
         ):
-        super(dataProvide, self).__init__( );
+        super(dsxbProvide, self).__init__( );
 
         self.base_folder     = base_folder
         self.sub_folders     = sub_folder
@@ -296,7 +296,7 @@ class dsxbImageProvide(dataProvide):
         folders_image='images',
         ext = 'png',
         ):
-        super(dataProvide, self).__init__( );
+        super(dsxbImageProvide, self).__init__( );
         
         self.base_folder     = base_folder
         self.sub_folders     = sub_folder
@@ -338,8 +338,6 @@ class dsxbImageProvide(dataProvide):
 
 
 
-
-
 class ctechProvide(dataProvide):
     '''
     Mnagement for Caltech dataset
@@ -369,13 +367,15 @@ class ctechProvide(dataProvide):
         pref_image='',
         pref_label='',
         ):
-        super(dataProvide, self).__init__( );
+        super(ctechProvide, self).__init__( );
         
         self.base_folder     = base_folder
         self.sub_folders     = sub_folder
         self.folders_image   = folders_image
         self.folders_label   = folders_label
         self.data = []
+
+
 
     def getimage(self,i):
         #check index
@@ -454,7 +454,7 @@ class nucleiProvide(dataProvide):
         pref_image='',
         pref_label='',
         ):
-        super(dataProvide, self).__init__( );
+        super(nucleiProvide, self).__init__( );
         
         self.base_folder     = base_folder
         self.sub_folders     = sub_folder
@@ -513,7 +513,7 @@ class imageProvide(dataProvide):
     '''
 
     def __init__(self, path, ext='jpg', fn_image=''):
-        super(dataProvide, self).__init__( );
+        super(imageProvide, self).__init__( );
         
         if os.path.isdir(path) is not True:
             raise ValueError('Path {} is not directory'.format(path))
@@ -525,8 +525,6 @@ class imageProvide(dataProvide):
         #self.files = os.listdir(self.pathimage);
         self.data = [ f for f in sorted(os.listdir(self.pathimage)) if f.split('.')[-1] == ext ];    
         assert( len(self.data) )
-
-
         self.ext = ext;
 
 

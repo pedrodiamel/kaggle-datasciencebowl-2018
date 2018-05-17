@@ -1,5 +1,6 @@
 
 import os
+import sys
 import torch
 import pandas as pd
 from skimage import io, transform
@@ -10,89 +11,81 @@ from torchvision import transforms, utils
 import csv
 from skimage import color
 import scipy.misc
-
-from deep.datasets import imageutl as imutl
-from deep.datasets import utility as utl
-from deep import visualization as view
-from deep.datasets import dsxbdata 
-from deep.datasets import dsxbtransform as dsxbtrans
+import cv2
 
 
+sys.path.append('../')
+from torchlib.datasets.ctechdata import CTECHDataset  
+from torchlib.datasets import imageutl as imutl
+from torchlib.datasets import utility as utl
+from torchlib.transforms import transforms as mtrans
+from torchlib import visualization as view
 
-pathdataset     = '../db'
-namedataset     = 'databoewlex'
-sub_folder      =  'train'
+
+
+pathdataset     = '/home/pdmf/.datasets/'
+namedataset     = 'cellcaltech0001'
+sub_folder      = ''
 folders_images  = 'images'
 folders_labels  = 'labels'
-folders_weights = 'weights'
-
 base_folder = os.path.join(pathdataset, namedataset) 
 
-
-data = dsxbdata.DSXBDataset(
+data = CTECHDataset(
         base_folder, 
         sub_folder, 
-        folders_contours='touchs',
+        count=10,
         transform=transforms.Compose([
-            #dsxbtrans.ElasticDistort(size_grid=50, deform=15),                       
-            dsxbtrans.RandomCrop( cropsize=(50,50) ),
-            #dsxbtrans.ColorDistort(),
-            #dsxbtrans.ShiftScale(prob=1.0, limit=20), 
-            #dsxbtrans.GeometricDistort(angle=360, translation=0.05, warp=0.01),            
-            #dsxbtrans.RandomFlip(prob=0.75),
-            dsxbtrans.UnetResize(imsize=128),                     
-            dsxbtrans.ToTensor(),
-            #dsxbtrans.ElasticTorchDistort(size_grid=10, deform=0.05),
-            dsxbtrans.Normalize(),  
-            ])
+            mtrans.ToResize( (500,500), resize_mode='crop' ) ,
+            mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_CONSTANT  ),
+            #mtrans.ToResizeUNetFoV(388, cv2.BORDER_REFLECT_101),
+            mtrans.ToTensor(),
+            mtrans.ToNormalization(),
+        ])
         )
 
-dataloader = DataLoader(data, batch_size=3, shuffle=True, num_workers=1 )
+
+# sample = data[0]
+# for k,v in sample.items():
+#     print( k, ':', v.shape, v.min(), v.max() )
+# print('\n')
+# #assert(False)
+
+
+dataloader = DataLoader(data, batch_size=3, shuffle=False, num_workers=1 )
 
 label_batched = []
 for i_batch, sample_batched in enumerate(dataloader):
-    print(i_batch, sample_batched['image'].size(),
-          sample_batched['label'].size(),
-          sample_batched['weight'].size()    
-         )
+    print(i_batch, sample_batched['image'].size(), sample_batched['label'].size(), )
     
-    image_a = sample_batched['image'][0,:,...]
-    image_b = sample_batched['image'][1,:,...]
-    image_c = sample_batched['image'][2,:,...]
-
-    image = sample_batched['image'][0,0,...]
-    label = sample_batched['label'][0,2,...]
-    weight = sample_batched['weight'][0,0,...]
+    image = sample_batched['image'][0,:,...]
+    label = sample_batched['label'][0,1,...]
     
     print(torch.min(image), torch.max(image), image.shape )
     print(torch.min(label), torch.max(label), image.shape )
-    print(torch.min(weight), torch.max(weight), image.shape )
-
-    print(image_a.shape)
+    print(image.shape)
     print( np.unique(label) )
         
     plt.figure( figsize=(15,15) )
-    plt.subplot(131)
-    plt.imshow( image_a.permute(1,2,0).squeeze()) #, cmap='gray' 
+    plt.subplot(121)
+    plt.imshow( image.permute(1,2,0).squeeze()) #, cmap='gray' 
     plt.axis('off')
     plt.ioff()
 
-    plt.subplot(132)
-    plt.imshow( image_b.permute(1,2,0).squeeze() ) 
-    #plt.imshow( label ) #cmap='gray'
+    plt.subplot(122)
+    plt.imshow( label, cmap='gray' ) #
     plt.axis('off')
     plt.ioff()
 
-    plt.subplot(133)
-    plt.imshow( image_c.permute(1,2,0).squeeze()  ) 
-    #plt.imshow( weight )
-    plt.axis('off')
-
-    plt.ioff()       
+    # plt.subplot(133)
+    # plt.imshow( image_c.permute(1,2,0).squeeze()  ) 
+    # #plt.imshow( weight )
+    # plt.axis('off')
+    #plt.ioff()       
+    
     plt.show()        
 
     # observe 4th batch and stop.
-    if i_batch == 4: 
+    if i_batch == 2: 
         break        
 
 
