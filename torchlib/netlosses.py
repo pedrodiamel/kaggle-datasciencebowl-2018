@@ -5,8 +5,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-
-    
 class WeightedMCEloss(nn.Module):
 
     def __init__(self ):

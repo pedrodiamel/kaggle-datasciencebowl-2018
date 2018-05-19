@@ -10,6 +10,8 @@ import csv
 import pandas as pd
 import operator
 
+from pytvision.datasets import dataProvide
+
 from . import utility as utl
 
 trainfile='stage1_train'
@@ -17,53 +19,6 @@ testfile='stage1_test'
 testfilefinal='stage2_test_final'
 
 
-class dataProvide(object):
-    
-    def __init__(self):
-        self.index = 0
-        self.data  = []
-
-    def __len__(self):
-        return len(self.data)
-        
-    def _loadimage(self, pathname):
-        '''
-        Load image using pathname
-        '''
-
-        if os.path.exists(pathname):
-            try:
-                image = PIL.Image.open(pathname)
-                image.load()
-            except IOError as e:
-                raise ValueError('IOError: Trying to load "%s": %s' % (pathname, e.message) ) 
-        else:
-            raise ValueError('"%s" not found' % pathname)
-
-        if image.mode in ['L', 'RGB']:
-            # No conversion necessary
-            return image
-        elif image.mode in ['1']:
-            # Easy conversion to L
-            return image.convert('L')
-        elif image.mode in ['LA']:
-            # Deal with transparencies
-            new = PIL.Image.new('L', image.size, 255)
-            new.paste(image, mask=image.convert('RGBA'))
-            return new
-        elif image.mode in ['CMYK', 'YCbCr']:
-            # Easy conversion to RGB
-            return image.convert('RGB')
-        elif image.mode in ['P', 'RGBA']:
-            # Deal with transparencies
-            new = PIL.Image.new('RGB', image.size, (255, 255, 255))
-            new.paste(image, mask=image.convert('RGBA'))
-            return new
-        else:
-            raise ValueError('Image mode "%s" not supported' % image.mode);
-        
-        return  image;
-    
 
 class dsxbExProvide(dataProvide):
     '''
@@ -131,8 +86,6 @@ class dsxbExProvide(dataProvide):
         weight = np.loadtxt(weight_pathname, delimiter=",")
         
         return image, label, contours, weight
-
-
 
 class dsxbProvide(dataProvide):
     '''
@@ -266,8 +219,6 @@ class dsxbProvide(dataProvide):
         data = sorted(data.items())
         self.data = [ v for k,v in data ]
 
-
-
 class dsxbImageProvide(dataProvide):
     '''
     Mnagement for Data Science Bowl image dataset
@@ -334,9 +285,6 @@ class dsxbImageProvide(dataProvide):
         folder_path = os.path.join(self.base_folder, self.sub_folders )
         data = [ (f,os.path.join(folder_path, f, self.folders_image,'{}.{}'.format(f, self.ext))) for f in sorted(os.listdir(folder_path)) ];
         self.data = data
-
-
-
 
 class ctechProvide(dataProvide):
     '''
@@ -423,7 +371,6 @@ class ctechProvide(dataProvide):
 
         self.data = data
 
-
 class nucleiProvide(dataProvide):
     '''
     Mnagement for NUCLEI SEGMENTATION dataset
@@ -473,7 +420,6 @@ class nucleiProvide(dataProvide):
 
     def getid(self): return self.data[self.index][0]
     
-
     def __getitem__(self, i):
                 
         #check index
@@ -504,46 +450,3 @@ class nucleiProvide(dataProvide):
 
         self.data = data
 
-
-
-
-class imageProvide(dataProvide):
-    '''
-    Management the image resources  
-    '''
-
-    def __init__(self, path, ext='jpg', fn_image=''):
-        super(imageProvide, self).__init__( );
-        
-        if os.path.isdir(path) is not True:
-            raise ValueError('Path {} is not directory'.format(path))
-        
-        self.fn_image = fn_image;
-        self.path = path;
-        self.pathimage = os.path.join(path, fn_image);
-
-        #self.files = os.listdir(self.pathimage);
-        self.data = [ f for f in sorted(os.listdir(self.pathimage)) if f.split('.')[-1] == ext ];    
-        assert( len(self.data) )
-        self.ext = ext;
-
-
-    def __getitem__(self, idx):
-        return self.getimage(idx)
-
-    def getimage(self, i):
-        '''
-        Get image i
-        '''
-        #check index
-        if i<0 and i>self.num: raise ValueError('Index outside range');
-        self.index = i;
-
-        pathname = os.path.join(self.path,self.fn_image, self.data[i]);        
-        return np.array(self._loadimage(pathname));
-    
-    def getid(self):
-        '''
-        Get current image name
-        '''
-        return self.data[self.index];

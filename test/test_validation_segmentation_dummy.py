@@ -1,27 +1,28 @@
+
 import os
 import sys
-import torch
+
+
 import pandas as pd
 from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-import csv
-from skimage import color
+
+
 import scipy.misc
 import cv2
 
+from pytvision.datasets.syntheticdata import SyntethicCircleDataset
+from pytvision.transforms import transforms as mtrans
+from pytvision import visualization as view
 
 sys.path.append('../')
-from torchlib.datasets.syntheticdata import SyntethicCircleDataset
 from torchlib.neuralnet import SegmentationNeuralNet
-from torchlib.datasets import imageutl as imutl
-from torchlib.datasets import utility as utl
-
-from torchlib.transforms import transforms as mtrans
-from torchlib import visualization as view
-from torchlib.logger import summary
 from torchlib import postprocessing as posp
 
 
@@ -64,13 +65,15 @@ network = SegmentationNeuralNet(
         )
 
 # load model
+print('||> load model ...')
+start = time.time()
 if network.load( path_model ) is not True:
     assert(False)
+t = time.time() - start
+print('||> load model time: {}sec'.format(t) )
 
-#print(network)
-#summary(network.net, [num_classes,size_input,size_input] )
-print('load model ...')
 
+print('||> load dataset ...')
 data = SyntethicCircleDataset(
         count=count,
         imsize=(500,500),
@@ -86,8 +89,8 @@ data = SyntethicCircleDataset(
             ])
         )
 
-print('load dataset ...')
-print('Size dataset:', len(data))
+
+print('||> size dataset:', len(data))
 
 
 # training neural net
@@ -100,7 +103,7 @@ print(image.shape)
 score = network.inference( image )
 
 print(score.shape)
-print('save score ...')
+print('||> save score ...')
 for c in range(score.shape[2]):
     scipy.misc.imsave('../out/score_{}.png'.format(c), score[:,:,c])
 
@@ -111,13 +114,13 @@ label = posp.mpostprocess(score)
 print(label.shape)
 
 # save result
-print('save image and result ...')
+print('||> save image and result ...')
 im = image.data.cpu().numpy().transpose(2, 3, 1,0)[:,:,:,0]
 print(im.shape)
 scipy.misc.imsave('../out/image.png', im )
 scipy.misc.imsave('../out/result.png', (label/label.max())*255 )
 
 
-print('DONE!!!')
+print('||> DONE!!!')
 
 

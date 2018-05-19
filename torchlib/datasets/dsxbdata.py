@@ -1,20 +1,17 @@
 
 
 import os
-
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
-
 import numpy as np
-from collections import namedtuple
-from skimage import io, transform
-from skimage import color
+
+from torch.utils.data import Dataset
+
+from .imageutl import dsxbExProvide
+from pytvision.transforms.aumentation import  ObjectImageMaskAndWeightTransform
 
 import warnings
 warnings.filterwarnings("ignore")
 
-from . import imageutl as imutl
+
 
 train = 'train'
 validation = 'val'
@@ -35,12 +32,13 @@ class DSXBDataset(Dataset):
         folders_contours='contours',
         folders_weights='weights',
         ext='png',
+        num_channel=3,
         transform=None,
         ):
         """           
         """            
            
-        self.data = imutl.dsxbExProvide(
+        self.data = dsxbExProvide(
                 base_folder, 
                 sub_folder, 
                 folders_images, 
@@ -50,7 +48,8 @@ class DSXBDataset(Dataset):
                 ext
                 )
 
-        self.transform = transform      
+        self.transform = transform    
+        self.num_channel = num_channels
 
     def __len__(self):
         return len(self.data)
@@ -58,29 +57,19 @@ class DSXBDataset(Dataset):
     def __getitem__(self, idx):   
 
         image, label, contours, weight = self.data[idx] 
-
-        #to rgb
-        if len(image.shape)==2 or (image.shape==3 and image.shape[2]==1):
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        image_t = image
-
+        image_t = utility.to_channels(image, ch=self.num_channels )        
         label_t = np.zeros( (label.shape[0],label.shape[1],3) )
         label_t[:,:,0] = (label < 128)
         label_t[:,:,1] = (label > 128)
         label_t[:,:,2] = (contours > 128)
+        weight_t = weight[:,:,np.newaxis]      
 
-        # label_t = np.zeros( (label.shape[0],label.shape[1]) )
-        # label_t[(label > 128)]  = 1    #back, forg
-        # label_t[(contours > 128)] = 2
-        # label_t = label_t[:,:,np.newaxis]
-
-        weight_t = weight[:,:,np.newaxis]        
-
-        sample = {'image': image_t, 'label':label_t, 'weight':weight_t }
+        obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
         if self.transform: 
-            sample = self.transform(sample)
-        
-        return sample
+            sample = self.transform( obj )
+        return obj.to_output()
+
+
 
 
 class DSXBExDataset(Dataset):
@@ -98,12 +87,13 @@ class DSXBExDataset(Dataset):
         folders_weights='weights',
         ext='png',
         transform=None,
-        count=1000
+        count=1000,
+        num_channel=3,
         ):
         """           
         """            
            
-        self.data = imutl.dsxbExProvide(
+        self.data = dsxbExProvide(
                 base_folder, 
                 sub_folder, 
                 folders_images, 
@@ -115,34 +105,27 @@ class DSXBExDataset(Dataset):
 
 
         self.transform = transform  
-        self.count = count    
+        self.count = count  
+        self.num_channel = num_channel  
 
     def __len__(self):
-        return self.count #len(self.data)
+        return self.count  
 
     def __getitem__(self, idx):   
 
         idx = len(self.data)%idx
         image, label, contours, weight = self.data[idx] 
 
-        #to rgb
-        if len(image.shape)==2 or (image.shape==3 and image.shape[2]==1):
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        image_t = image
+        image_t = utility.to_channels(image, ch=self.num_channels )   
 
         label_t = np.zeros( (label.shape[0],label.shape[1],3) )
         label_t[:,:,0] = (label < 128)
         label_t[:,:,1] = (label > 128)
         label_t[:,:,2] = (contours > 128)
 
-        # label_t = np.zeros( (label.shape[0],label.shape[1]) )
-        # label_t[(label > 128)]  = 1    #back, forg
-        # label_t[(contours > 128)] = 2
-        # label_t = label_t[:,:,np.newaxis]
-
         weight_t = weight[:,:,np.newaxis]        
 
-        sample = {'image': image_t, 'label':label_t, 'weight':weight_t }
+        obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
         if self.transform: 
-            sample = self.transform(sample)
-        return sample
+            sample = self.transform( obj )
+        return obj.to_output()

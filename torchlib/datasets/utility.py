@@ -3,15 +3,8 @@
 import os
 import sys
 import numpy as np
-import PIL.Image
-import scipy.misc
-
 import cv2
-import skimage.color as skcolor
-import skimage.util as skutl
-import random
-import csv
-import h5py
+
 
 from skimage import io, transform, morphology, filters
 from scipy import ndimage
@@ -19,40 +12,6 @@ import skimage.morphology as morph
 import skfmm
 
 #tranformations 
-
-def isrgb( image ):
-    return len(image.shape)==2 or (image.shape==3 and image.shape[2]==1)
-
-def to_rgb( image ):
-    #to rgb
-    if isrgb( image ):
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    return image
-
-def to_gray( image ):
-    if not isrgb( image ):
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    return image
-
-def to_channels( image, ch ):
-    if ch == 1:
-        image = to_gray( image )[:,:,np.newaxis]
-    elif ch == 3:
-        image = to_rgb( image )
-    else:
-        assert(False)
-    return image
-
-def to_one_hot( x, nc ):
-    y = np.zeros((nc)); y[x] = 1.0
-    return y
-
-def tolabel( x ):
-    return (np.max(x,axis=0)>0) 
-
-def summary(data):
-    print(data.shape, data.min(), data.max())
-
 def get_label_mask(mask_img, border_img, seed_ths, threshold, seed_size=8, obj_size=10):
     img_copy = np.copy(mask_img)
     m = img_copy * (1 - border_img)

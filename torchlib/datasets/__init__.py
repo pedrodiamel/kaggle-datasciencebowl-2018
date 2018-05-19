@@ -1,6 +1,6 @@
 
 from .dsxbdata import *
-from .syntheticdata import *
+from .ctechdata import *
 from .imageutl import *
 
 
