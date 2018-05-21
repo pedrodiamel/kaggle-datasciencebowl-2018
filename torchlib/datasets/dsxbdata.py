@@ -67,7 +67,7 @@ class DSXBDataset(Dataset):
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
         if self.transform: 
             sample = self.transform( obj )
-        return obj.to_output()
+        return obj.to_dict()
 
 
 
@@ -128,4 +128,4 @@ class DSXBExDataset(Dataset):
         obj = ObjectImageMaskAndWeightTransform( image_t, label_t, weight_t  )
         if self.transform: 
             sample = self.transform( obj )
-        return obj.to_output()
+        return obj.to_dict()

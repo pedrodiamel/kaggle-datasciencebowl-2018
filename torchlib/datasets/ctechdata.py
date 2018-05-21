@@ -64,4 +64,4 @@ class CTECHDataset(object):
         if self.transform: 
             sample = self.transform( obj )
 
-        return obj.to_output()
+        return obj.to_dict()
