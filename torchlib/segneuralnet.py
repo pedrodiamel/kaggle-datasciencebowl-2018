@@ -271,8 +271,6 @@ class SegmentationNeuralNet(AbstractNeuralNet):
                         Ids[k] = Id[j]  
                         k+=1 
 
-                #print( 'Test:', i , flush=True )
-
         Yhat = Yhat[:k,:]
         Y = Y[:k]
         Ids = Ids[:k]
@@ -295,6 +293,8 @@ class SegmentationNeuralNet(AbstractNeuralNet):
         return yhat
 
     
+
+
     def _create_model(self, arch, num_output_channels, num_input_channels, pretrained ):
         """
         Create model

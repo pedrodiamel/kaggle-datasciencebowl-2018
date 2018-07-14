@@ -95,7 +95,6 @@ print('||> size dataset:', len(data))
 sample = data[0]
 image, label = sample['image'], sample['label'] 
 image = image.unsqueeze(0)
-
 print(image.shape)
 
 score = network.inference( image )
