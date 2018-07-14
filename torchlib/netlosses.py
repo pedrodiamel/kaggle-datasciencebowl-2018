@@ -229,11 +229,6 @@ class Dice(nn.Module):
         return np.mean(dices)
 
 
-
-
-
-
-
 def to_one_hot(mask, size):    
     n, c, h, w = size
     ymask = torch.FloatTensor(size).zero_()

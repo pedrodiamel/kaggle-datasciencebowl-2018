@@ -1,5 +1,11 @@
 
-# 2018 Data Science Bowl
+# Kaggle: 2018 Data Science Bowl
+Find the nuclei in divergent images to advance medical discovery
+
+![Results](misc/results.png)
+
+Top10%: 358 place
+
 
 ## Installation
     
@@ -60,8 +66,9 @@ To use Visdom in the browser:
 - https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
 
 
-## Other
-curlwget https://chrome.google.com/webstore/detail/curlwget/jmocjfidanebdlinpbcdkcmgdifblncg?hl=es
+## Others
+
+- curlwget https://chrome.google.com/webstore/detail/curlwget/jmocjfidanebdlinpbcdkcmgdifblncg?hl=es
 
 <!-- 
 # BORDER_CONSTANT 	
