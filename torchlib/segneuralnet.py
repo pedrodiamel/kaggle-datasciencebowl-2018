@@ -17,7 +17,7 @@ from tqdm import tqdm
 from . import netmodels as nnmodels
 from . import netlosses as nloss
 
-from pytvision.neuralnet import AbstractNeuralNet
+from pytvision.neuralnet import NeuralNetAbstract
 from pytvision.logger import Logger, AverageFilterMeter, AverageMeter
 from pytvision import graphic as gph
 from pytvision import netlearningrate
@@ -27,7 +27,7 @@ from pytvision import utils as pytutils
 # Neural Net for Segmentation
 
 
-class SegmentationNeuralNet(AbstractNeuralNet):
+class SegmentationNeuralNet(NeuralNetAbstract):
     """
     Segmentation Neural Net 
     """

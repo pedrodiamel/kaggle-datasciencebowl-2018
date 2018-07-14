@@ -7,6 +7,8 @@ from torch.utils.data import Dataset
 
 from .imageutl import dsxbExProvide
 from pytvision.transforms.aumentation import  ObjectImageMaskAndWeightTransform
+from pytvision.datasets import utility
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -32,7 +34,7 @@ class DSXBDataset(Dataset):
         folders_contours='contours',
         folders_weights='weights',
         ext='png',
-        num_channel=3,
+        num_channels=3,
         transform=None,
         ):
         """           
@@ -49,7 +51,7 @@ class DSXBDataset(Dataset):
                 )
 
         self.transform = transform    
-        self.num_channel = num_channels
+        self.num_channels = num_channels
 
     def __len__(self):
         return len(self.data)
@@ -88,7 +90,7 @@ class DSXBExDataset(Dataset):
         ext='png',
         transform=None,
         count=1000,
-        num_channel=3,
+        num_channels=3,
         ):
         """           
         """            
@@ -106,14 +108,14 @@ class DSXBExDataset(Dataset):
 
         self.transform = transform  
         self.count = count  
-        self.num_channel = num_channel  
+        self.num_channels = num_channels
 
     def __len__(self):
         return self.count  
 
     def __getitem__(self, idx):   
 
-        idx = len(self.data)%idx
+        idx = idx % len(self.data)
         image, label, contours, weight = self.data[idx] 
 
         image_t = utility.to_channels(image, ch=self.num_channels )   

@@ -4,7 +4,7 @@ Find the nuclei in divergent images to advance medical discovery
 
 ![Results](misc/results.png)
 
-Top10%: 358 place
+Top10%: [358 place](https://www.kaggle.com/c/data-science-bowl-2018/leaderboard)
 
 
 ## Installation
@@ -42,7 +42,12 @@ To use Visdom in the browser:
     python -m visdom.server -env_path runs/visdom/
     # http://localhost:8097/
 
+
+![Visdom](misc/train.png)
+
+
 ## How use
+
 ### Step 1: Create dataset
 
     #(1) kaggle dataset
@@ -69,20 +74,9 @@ To use Visdom in the browser:
 - https://github.com/mdbloice/Augmentor
 - https://github.com/kuangliu
 - https://github.com/apache/incubator-mxnet/blob/master/python/mxnet/image/image.py
-
+- https://github.com/selimsef/dsb2018_topcoders
 
 ## Others
 
 - curlwget https://chrome.google.com/webstore/detail/curlwget/jmocjfidanebdlinpbcdkcmgdifblncg?hl=es
 
-<!-- 
-# BORDER_CONSTANT 	
-# BORDER_REPLICATE 	
-# BORDER_REFLECT 	
-# BORDER_WRAP 	
-# BORDER_REFLECT_101 	
-# BORDER_TRANSPARENT 	
-# BORDER_REFLECT101 	
-# BORDER_DEFAULT 	
-# BORDER_ISOLATED 	 
--->

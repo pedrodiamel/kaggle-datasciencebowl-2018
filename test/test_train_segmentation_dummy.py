@@ -19,8 +19,8 @@ from torchlib.segneuralnet import SegmentationNeuralNet
 
 project='../out/netruns'
 name='test_001'
-no_cuda=True
-parallel=False
+no_cuda=False
+parallel=True
 seed=1
 print_freq=10
 gpu=0

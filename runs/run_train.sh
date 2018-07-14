@@ -2,31 +2,33 @@
 
 
 # parameters
-DATA='../db/databoewlex'
+DATA='~/.datasets/datasciencebowl/databoewlex'
+NAMEDATASET='databoewlex'
 PROJECT='./netruns'
-EPOCHS=10
-BATCHSIZE=1
+EPOCHS=60
+BATCHSIZE=60
 LEARNING_RATE=0.0001
 MOMENTUM=0.5
-PRINT_FREQ=10
-EXP_NAME='exp_net_unet_008'
-WORKERS=1
+PRINT_FREQ=50
+WORKERS=60
 RESUME='checkpointxx.pth.tar'
 GPU=0
 ARCH='unet'
-LOSS='mcedice'
+LOSS='wmce'
 OPT='adam'
 SCHEDULER='fixed'
 IMAGESIZE=100
 SNAPSHOT=10
+EXP_NAME='exp_datasciencebowl_'$ARCH'_'$LOSS'_'$OPT'_'$NAMEDATASET'_001'
 
-#rm -rf $PROJECT/$EXP_NAME/$EXP_NAME.log
-#rm -rf $PROJECT/$EXP_NAME/
+
+rm -rf $PROJECT/$EXP_NAME/$EXP_NAME.log
+rm -rf $PROJECT/$EXP_NAME/
 mkdir $PROJECT    
 mkdir $PROJECT/$EXP_NAME  
 
 
-python train.py \
+python ../train.py \
 $DATA \
 --project=$PROJECT \
 --name=$EXP_NAME \
@@ -45,6 +47,6 @@ $DATA \
 --scheduler=$SCHEDULER \
 --arch=$ARCH \
 --finetuning \
---no-cuda \
+--parallel \
 2>&1 | tee -a $PROJECT/$EXP_NAME/$EXP_NAME.log \
 

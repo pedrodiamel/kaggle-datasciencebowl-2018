@@ -1,14 +1,17 @@
 
 import os
+import cv2
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import torch.backends.cudnn as cudnn
 
-from torchlib.datasets import dsxbdata 
+from torchlib.datasets import dsxbdata
 from torchlib.segneuralnet import SegmentationNeuralNet
-from torchlib.transforms import transforms as mtrans
+
+from pytvision.transforms import transforms as mtrans
+from pytvision import visualization as view
 
 
 from argparse import ArgumentParser
@@ -94,7 +97,7 @@ def main():
         momentum=args.momentum,
         optimizer=args.opt,
         lrsch=args.scheduler,
-        pretrained=args.finetuning
+        pretrained=args.finetuning,
         size_input=imsize
         )
     
@@ -104,12 +107,19 @@ def main():
 
     # datasets
     # training dataset
-    train_data = dsxbdata.DSXBDataset(
+    train_data = dsxbdata.DSXBExDataset(
         args.data, 
         dsxbdata.train, 
+        count=10000,
+        num_channels=num_channels,
         transform=transforms.Compose([
-            mtrans.ToResize( (500,500), resize_mode='crop' ) ,
-            mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_CONSTANT  ),
+            mtrans.ToResize( (500,500), resize_mode='crop' ),
+            mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
+            mtrans.RandomScale(factor=0.2, padding_mode=cv2.BORDER_REFLECT_101 ),
+            mtrans.RandomGeometricalTransform( angle=45, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT_101),
+            #mtrans.ToRandomTransform( mtrans.HFlip(), prob=0.5 ),
+            #mtrans.ToRandomTransform( mtrans.VFlip(), prob=0.5 ),
+            
             mtrans.ToResizeUNetFoV(imsize, cv2.BORDER_REFLECT_101),
             mtrans.ToTensor(),
             mtrans.ToNormalization(),
@@ -120,11 +130,13 @@ def main():
         num_workers=args.workers, pin_memory=network.cuda, drop_last=True )
     
     # validate dataset
-    val_data = dsxbdata.DSXBDataset(
+    val_data = dsxbdata.DSXBExDataset(
         args.data, 
         dsxbdata.test, 
+        count=5000,
+        num_channels=num_channels,
         transform=transforms.Compose([
-            mtrans.ToResize( (500,500), resize_mode='crop' ) ,
+            mtrans.ToResize( (500,500), resize_mode='crop' ),
             mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_CONSTANT  ),
             mtrans.ToResizeUNetFoV(imsize, cv2.BORDER_REFLECT_101),
             mtrans.ToTensor(),

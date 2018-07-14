@@ -35,8 +35,9 @@ class dsxbExProvide(dataProvide):
         folders_weights='weights',
         ext='png',
         ):
-        super(dsxbExProvide, self).__init__( );
-
+        super(dsxbExProvide, self).__init__( );        
+        base_folder = os.path.expanduser( base_folder )
+                
         self.path = base_folder
         self.subpath = sub_folder
         self.folders_images = folders_images
@@ -121,7 +122,7 @@ class dsxbProvide(dataProvide):
         ):
         super(dsxbProvide, self).__init__( );
 
-        self.base_folder     = base_folder
+        self.base_folder     = os.path.expanduser( base_folder )
         self.sub_folders     = sub_folder
         self.folders_image   = folders_image
         self.folders_masks   = folders_masks
@@ -249,7 +250,7 @@ class dsxbImageProvide(dataProvide):
         ):
         super(dsxbImageProvide, self).__init__( );
         
-        self.base_folder     = base_folder
+        self.base_folder     = os.path.expanduser( base_folder )
         self.sub_folders     = sub_folder
         self.folders_image   = folders_image
         self.ext = ext
@@ -317,7 +318,7 @@ class ctechProvide(dataProvide):
         ):
         super(ctechProvide, self).__init__( );
         
-        self.base_folder     = base_folder
+        self.base_folder     = os.path.expanduser( base_folder )
         self.sub_folders     = sub_folder
         self.folders_image   = folders_image
         self.folders_label   = folders_label
@@ -403,7 +404,7 @@ class nucleiProvide(dataProvide):
         ):
         super(nucleiProvide, self).__init__( );
         
-        self.base_folder     = base_folder
+        self.base_folder     = os.path.expanduser( base_folder )
         self.sub_folders     = sub_folder
         self.folders_image   = folders_image
         self.folders_label   = folders_label

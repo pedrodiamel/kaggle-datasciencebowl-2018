@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATHDATASET='../db'
+PATHDATASET='~/.datasets/datasciencebowl'
 NAMEDATASET='databoewl'
 PATHNAMEOUT='.'
 FILENAME='submission.csv'
