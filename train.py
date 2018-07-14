@@ -7,7 +7,7 @@ from torchvision import transforms, utils
 import torch.backends.cudnn as cudnn
 
 from torchlib.datasets import dsxbdata 
-from torchlib.neuralnet import SegmentationNeuralNet
+from torchlib.segneuralnet import SegmentationNeuralNet
 from torchlib.transforms import transforms as mtrans
 
 
