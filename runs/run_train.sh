@@ -4,7 +4,7 @@
 # parameters
 DATA='~/.datasets/datasciencebowl/databoewlex'
 NAMEDATASET='databoewlex'
-PROJECT='./netruns'
+PROJECT='../netruns'
 EPOCHS=60
 BATCHSIZE=60
 LEARNING_RATE=0.0001

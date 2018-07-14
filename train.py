@@ -113,7 +113,7 @@ def main():
         count=10000,
         num_channels=num_channels,
         transform=transforms.Compose([
-            mtrans.ToResize( (500,500), resize_mode='crop' ),
+            mtrans.ToResize( (500,500), resize_mode='crop', padding_mode=cv2.BORDER_REFLECT_101 ),
             mtrans.RandomCrop( (255,255), limit=50, padding_mode=cv2.BORDER_REFLECT_101  ),
             mtrans.RandomScale(factor=0.2, padding_mode=cv2.BORDER_REFLECT_101 ),
             mtrans.RandomGeometricalTransform( angle=45, translation=0.2, warp=0.02, padding_mode=cv2.BORDER_REFLECT_101),

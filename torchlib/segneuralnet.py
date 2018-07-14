@@ -278,8 +278,7 @@ class SegmentationNeuralNet(NeuralNetAbstract):
         return Ids, Yhat, Y
 
     
-    
-    def inference(self, image):        
+    def __call__(self, image):        
         
         # switch to evaluate mode
         self.net.eval()
