@@ -14,7 +14,7 @@ from pytvision.transforms import transforms as mtrans
 from pytvision import visualization as view
 
 sys.path.append('../')
-from torchlib.neuralnet import SegmentationNeuralNet
+from torchlib.segneuralnet import SegmentationNeuralNet
 
 
 project='../out/netruns'

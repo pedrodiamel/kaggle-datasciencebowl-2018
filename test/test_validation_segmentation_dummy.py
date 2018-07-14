@@ -2,7 +2,6 @@
 import os
 import sys
 
-
 import pandas as pd
 from skimage import io, transform
 import numpy as np
@@ -13,7 +12,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
-
 import scipy.misc
 import cv2
 
@@ -22,7 +20,7 @@ from pytvision.transforms import transforms as mtrans
 from pytvision import visualization as view
 
 sys.path.append('../')
-from torchlib.neuralnet import SegmentationNeuralNet
+from torchlib.segneuralnet import SegmentationNeuralNet
 from torchlib import postprocessing as posp
 
 

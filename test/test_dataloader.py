@@ -16,11 +16,9 @@ import cv2
 
 sys.path.append('../')
 from torchlib.datasets.ctechdata import CTECHDataset  
-from torchlib.datasets import imageutl as imutl
-from torchlib.datasets import utility as utl
-from torchlib.transforms import transforms as mtrans
-from torchlib import visualization as view
 
+from pytvision.transforms import transforms as mtrans
+from pytvision import visualization as view
 
 
 pathdataset     = '/home/pdmf/.datasets/'

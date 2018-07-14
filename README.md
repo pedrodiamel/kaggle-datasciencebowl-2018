@@ -13,6 +13,11 @@ Top10%: 358 place
     #install anaconda
     #pytorch
     $conda install pytorch torchvision -c pytorch
+    $git clone https://github.com/pedrodiamel/pytorchvision.git
+    $cd pytorchvision
+    $python setup.py install
+    $git clone https://github.com/pedrodiamel/datasciencebowl-2018.git
+    $cd clone datasciencebowl-2018
     $pip install -r installation.txt
 
 ## Download Kaggle dataset

@@ -294,51 +294,6 @@ class SegmentationNeuralNet(AbstractNeuralNet):
 
         return yhat
 
-
-    def representation(self, data_loader):
-        """"
-        Representation
-            -data_loader: simple data loader for image
-        """
-                
-        # switch to evaluate mode
-        self.net.eval()
-
-        n = len(data_loader)*data_loader.batch_size
-        k=0
-
-        # embebed features 
-        embX = np.zeros([n,self.net.dim])
-        embY = np.zeros([n,1])
-
-        batch_time = AverageMeter()
-        end = time.time()
-        for i, sample in enumerate(data_loader):
-                        
-            # get data (image, label)
-            inputs, targets = sample['image'], pytutils.argmax(sample['labels'])
-            inputs_var = pytutils.to_var(inputs, self.cuda, False, True )
-
-            # representation
-            emb = self.net.representation(inputs_var)
-            emb = pytutils.to_np(emb)
-            for j in range(emb.shape[0]):
-                embX[k,:] = emb[j,:]
-                embY[k] = targets[j]
-                k+=1
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            print('Representation: |{:06d}/{:06d}||{batch_time.val:.3f} ({batch_time.avg:.3f})|'.format(i,len(data_loader), batch_time=batch_time) )
-
-
-        embX = embX[:k,:]
-        embY = embY[:k]
-
-
-        return embX, embY
     
     def _create_model(self, arch, num_output_channels, num_input_channels, pretrained ):
         """
