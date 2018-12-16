@@ -7,11 +7,11 @@ import scipy.misc
 from scipy import ndimage as ndi
 import cv2
 
-from deep.datasets import imageutl as imutl
-from deep.datasets import utility as utl
-from deep.datasets import weightmaps 
-from deep import preprocessing as prep
-from deep import netutility as netutl
+from torchlib.datasets import imageutl as imutl
+from torchlib.datasets import utility as utl
+from torchlib.datasets import weightmaps 
+from torchlib import preprocessing as prep
+
 
 
 imsize = 512
@@ -28,10 +28,10 @@ def save(i, pathname,
     prefijo=''):   
 
     scipy.misc.imsave(os.path.join(pathname, 'images'   ,'{}{:06d}.png'.format(prefijo,i)), image_t )
-    scipy.misc.imsave(os.path.join(pathname, 'labels'   ,'{}{:06d}.png'.format(prefijo,i)), label_t )
-    scipy.misc.imsave(os.path.join(pathname, 'contours' ,'{}{:06d}.png'.format(prefijo,i)), contours_t )
-    scipy.misc.imsave(os.path.join(pathname, 'centers'  ,'{}{:06d}.png'.format(prefijo,i)), centers_t )
-    scipy.misc.imsave(os.path.join(pathname, 'touchs'   ,'{}{:06d}.png'.format(prefijo,i)), touchs_t )
+    scipy.misc.imsave(os.path.join(pathname, 'labels'   ,'{}{:06d}.png'.format(prefijo,i)), label_t.astype(int) )
+    scipy.misc.imsave(os.path.join(pathname, 'contours' ,'{}{:06d}.png'.format(prefijo,i)), contours_t.astype(int) )
+    scipy.misc.imsave(os.path.join(pathname, 'centers'  ,'{}{:06d}.png'.format(prefijo,i)), centers_t.astype(int) )
+    scipy.misc.imsave(os.path.join(pathname, 'touchs'   ,'{}{:06d}.png'.format(prefijo,i)), touchs_t.astype(int) )
 
     np.savetxt(os.path.join(pathname, 'weights', '{}{:06d}.txt'.format(prefijo,i)), weight_t, fmt="%2.3f", delimiter=",")
     print('>>', os.path.join(pathname, '{}{:06d}'.format(prefijo, i)) )
